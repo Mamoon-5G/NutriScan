@@ -1,6 +1,6 @@
 // API utility functions for EcoScan
-// Base API URL - update this to match your backend URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || "";
+// Base API URL - loaded from .env file via Vite
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 /**
  * Upload image to detect barcode
