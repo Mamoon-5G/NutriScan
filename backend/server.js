@@ -13,7 +13,13 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:4173"],
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "https://nutri-scanner-one.vercel.app",
+    "https://nutriscan-zii9.onrender.com"
+  ],
   credentials: true
 }));
 

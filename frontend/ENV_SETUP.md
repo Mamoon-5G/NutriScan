@@ -1,4 +1,4 @@
-# EcoScan Frontend - Environment Setup
+# NutriScan Frontend - Environment Setup
 
 ## Environment Variables
 

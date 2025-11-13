@@ -1,4 +1,4 @@
-// API utility functions for EcoScan
+// API utility functions for NutriScan
 // Base API URL - loaded from .env file via Vite
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
