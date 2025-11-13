@@ -1,7 +1,7 @@
 {
-  "name": "nutriscan-backend",
+  "name": "ecoscan-backend",
   "version": "1.0.0",
-  "description": "NutriScan backend",
+  "description": "EcoScan backend",
   "main": "server.js",
   "type": "module",
   "scripts": {
