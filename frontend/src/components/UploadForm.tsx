@@ -41,8 +41,10 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
     formData.append("image", file);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      const response = await fetch(`${apiUrl}/api/upload`, {
+      const apiUrl = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+      const url = `${apiUrl}/api/upload`;
+      console.debug('[UploadForm] POST', url, file.name);
+      const response = await fetch(url, {
         method: "POST",
         body: formData,
       });

@@ -40,8 +40,10 @@ const Index = () => {
     setIsLoadingProduct(true);
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      const response = await fetch(`${apiUrl}/api/product/${barcode}`);
+  const apiUrl = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+  const url = `${apiUrl}/api/product/${barcode}`;
+  console.debug('[fetchProductDetails] GET', url);
+  const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error("Product not found");
@@ -74,8 +76,10 @@ const Index = () => {
     setIsLoadingAnalysis(true);
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      const response = await fetch(`${apiUrl}/api/product/analyze`, {
+      const apiUrl = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+      const url = `${apiUrl}/api/product/analyze`;
+      console.debug('[analyzeProduct] POST', url, product);
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

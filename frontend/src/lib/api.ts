@@ -1,6 +1,6 @@
 // API utility functions for NutriScan
-// Base API URL - loaded from .env file via Vite
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+// Base API URL - loaded from .env file via Vite and normalized (no trailing slash)
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
 /**
  * Upload image to detect barcode
@@ -11,7 +11,9 @@ export const uploadImage = async (file: File) => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await fetch(`${API_BASE_URL}/api/upload`, {
+  const url = `${API_BASE_URL}/api/upload`;
+  console.debug("[api] POST", url);
+  const response = await fetch(url, {
     method: "POST",
     body: formData,
   });
@@ -29,7 +31,9 @@ export const uploadImage = async (file: File) => {
  * @returns Promise with product data
  */
 export const getProductDetails = async (barcode: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/product/${barcode}`);
+  const url = `${API_BASE_URL}/api/product/${barcode}`;
+  console.debug("[api] GET", url);
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error("Failed to fetch product details");
@@ -44,7 +48,9 @@ export const getProductDetails = async (barcode: string) => {
  * @returns Promise with analysis data
  */
 export const analyzeProduct = async (product: unknown) => {
-  const response = await fetch(`${API_BASE_URL}/api/product/analyze`, {
+  const url = `${API_BASE_URL}/api/product/analyze`;
+  console.debug("[api] POST", url, product);
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
