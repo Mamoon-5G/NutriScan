@@ -3,8 +3,6 @@ import { Leaf, Loader2 } from "lucide-react";
 import { UploadForm } from "@/components/UploadForm";
 import { ProductCard } from "@/components/ProductCard";
 import { AnalysisCard } from "@/components/AnalysisCard";
-import { EnvironmentalImpact } from "@/components/EnvironmentalImpact";
-import { HealthRiskDialog } from "@/components/HealthRiskDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -18,14 +16,6 @@ interface ProductData {
   harmful_ingredients?: string[];
   allergens?: string;
   nova_group?: number;
-  environmental_impact?: {
-    material: string;
-    co2: number;
-    water: number;
-    waste: number;
-  } | null;
-  health_risk?: 'Safe' | 'Moderate' | 'Harmful';
-  health_score?: number;
 }
 
 const Index = () => {
@@ -33,17 +23,13 @@ const Index = () => {
   const [analysisData, setAnalysisData] = useState<string>("");
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
-  const [showHealthRisk, setShowHealthRisk] = useState(false);
 
   // Fetch product details from API
   const fetchProductDetails = async (barcode: string) => {
     setIsLoadingProduct(true);
     
     try {
-  const apiUrl = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
-  const url = `${apiUrl}/api/product/${barcode}`;
-  console.debug('[fetchProductDetails] GET', url);
-  const response = await fetch(url);
+      const response = await fetch(`/api/product/${barcode}`);
       
       if (!response.ok) {
         throw new Error("Product not found");
@@ -55,12 +41,7 @@ const Index = () => {
       // Automatically trigger analysis after fetching product
       await analyzeProduct(data);
       
-      // Show health risk dialog
-      if (data.health_risk) {
-        setShowHealthRisk(true);
-      } else {
-        toast.success("Product loaded successfully!");
-      }
+      toast.success("Product loaded successfully!");
     } catch (error) {
       console.error("Error fetching product:", error);
       toast.error("Failed to load product details. Please check the barcode and try again.");
@@ -76,10 +57,7 @@ const Index = () => {
     setIsLoadingAnalysis(true);
     
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
-      const url = `${apiUrl}/api/product/analyze`;
-      console.debug('[analyzeProduct] POST', url, product);
-      const response = await fetch(url, {
+      const response = await fetch("/api/product/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,15 +89,8 @@ const Index = () => {
   };
 
   return (
-    <>
-      <HealthRiskDialog
-        isOpen={showHealthRisk}
-        onClose={() => setShowHealthRisk(false)}
-        healthRisk={productData?.health_risk}
-        productName={productData?.product_name}
-      />
-      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl space-y-8">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
@@ -164,7 +135,6 @@ const Index = () => {
                     isLoading={isLoadingAnalysis}
                   />
                 )}
-                <EnvironmentalImpact impact={productData.environmental_impact || null} />
               </>
             ) : null}
           </div>
@@ -186,7 +156,6 @@ const Index = () => {
         )}
       </div>
     </div>
-    </>
   );
 };
 

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { Upload, Hash, Loader2, Camera } from "lucide-react";
+import { useState } from "react";
+import { Upload, Hash, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { BrowserMultiFormatReader } from "@zxing/browser";
 
 interface UploadFormProps {
   onBarcodeDetected: (barcode: string) => void;
@@ -14,37 +15,51 @@ interface UploadFormProps {
 export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) => {
   const [manualBarcode, setManualBarcode] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
 
-  // Lazy-load CameraScanner to avoid SSR/window issues
-  const CameraScanner = React.lazy(() => import("./CameraScanner"));
-
-  // Handle image upload to detect barcode
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload a valid image file");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size must be less than 5MB");
       return;
     }
 
     setUploadingImage(true);
+
+    try {
+      // Try to detect barcode on client side first
+      const reader = new BrowserMultiFormatReader();
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      const result = reader.decodeFromImageElement(img);
+      const barcode = (await result).getText();
+      console.log("✅ Barcode detected on client:", barcode);
+      toast.success("Barcode detected successfully!");
+      onBarcodeDetected(barcode);
+      setUploadingImage(false);
+      event.target.value = "";
+      return;
+    } catch (zxingError) {
+      console.warn("⚠️ Client-side barcode detection failed:", zxingError);
+      // If no barcode found, fall back to server
+    }
+
+    // Fallback to server-side processing
     const formData = new FormData();
     formData.append("image", file);
 
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
-      const url = `${apiUrl}/api/upload`;
-      console.debug('[UploadForm] POST', url, file.name);
-      const response = await fetch(url, {
+      const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -67,12 +82,10 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
       toast.error("Failed to process image. Please try manual entry.");
     } finally {
       setUploadingImage(false);
-      // Reset file input
       event.target.value = "";
     }
   };
 
-  // Handle manual barcode submission
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -81,7 +94,6 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
       return;
     }
 
-    // Basic barcode validation (alphanumeric, typically 8-13 digits)
     if (!/^\d{8,13}$/.test(manualBarcode.trim())) {
       toast.error("Please enter a valid barcode (8-13 digits)");
       return;
@@ -97,24 +109,11 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
         <CardDescription>Upload a product image or enter the barcode manually</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Image Upload Section */}
         <div className="space-y-3">
           <Label htmlFor="image-upload" className="text-sm font-medium">
             Upload Product Image
           </Label>
           <div className="flex flex-col items-center justify-center gap-4">
-              <div className="flex w-full justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowScanner(true)}
-                  disabled={isLoading || uploadingImage}
-                  className="mb-2"
-                >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Open Camera
-                </Button>
-              </div>
             <label
               htmlFor="image-upload"
               className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 px-6 py-8 transition-all hover:border-primary hover:bg-muted/50"
@@ -140,23 +139,6 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
           </div>
         </div>
 
-        {showScanner && (
-          <div className="mt-4">
-            {/* Lazy-load the camera scanner to avoid SSR problems */}
-            <React.Suspense fallback={<div className="text-center">Opening camera...</div>}>
-              {/* CameraScanner is dynamically imported to avoid bundling issues with window */}
-              <CameraScanner
-                onDetected={(code) => {
-                  setShowScanner(false);
-                  onBarcodeDetected(code);
-                }}
-                onClose={() => setShowScanner(false)}
-              />
-            </React.Suspense>
-          </div>
-        )}
-
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-border" />
@@ -166,7 +148,6 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
           </div>
         </div>
 
-        {/* Manual Barcode Entry */}
         <form onSubmit={handleManualSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="manual-barcode" className="text-sm font-medium">
