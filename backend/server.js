@@ -1,13 +1,10 @@
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
 import multer from "multer";
 import productRoutes from "./routes/productRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 import path from "path";
 import fs from "fs";
-import uploadRoutes from "./routes/uploadRoutes.js";
-// Inside server.js (right after imports)
-import { getEnvironmentalImpact } from "./utils/environmentalImpact.js";
 
 const app = express();
 
@@ -16,16 +13,14 @@ app.use(cors({
   origin: [
     "http://localhost:3000",
     "http://localhost:5173",
-    "http://localhost:4173",
-    "https://nutri-scanner-one.vercel.app",
-    "https://nutriscan-zii9.onrender.com"
+    "http://localhost:5174"
   ],
   credentials: true
 }));
 
 // Body parser middleware
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Ensure upload folder exists
 const uploadsDir = "uploads";
@@ -42,7 +37,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/product", productRoutes);
 
 // Health check endpoint
-app.get("/", (req, res) => res.send("🌍 Product Analysis API Running"));
+app.get("/", (req, res) => res.send("🌍 EcoScan API Running"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
@@ -65,6 +60,6 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ EcoScan API running on port ${PORT}`);
   console.log(`📁 Uploads directory: ${path.resolve(uploadsDir)}`);
 });

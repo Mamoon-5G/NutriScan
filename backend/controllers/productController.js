@@ -1,6 +1,24 @@
-// controllers/productController.js
 import axios from "axios";
-import { getEnvironmentalImpact } from "../utils/environmentalImpact.js";
+
+/**
+ * Simple environmental impact assessment based on product name
+ */
+const getEnvironmentalImpact = (productName) => {
+  if (!productName) return "Unknown";
+
+  const name = productName.toLowerCase();
+  
+  // Basic categorization based on keywords
+  if (name.includes('organic') || name.includes('bio')) {
+    return "Low - Organic product";
+  } else if (name.includes('plastic') || name.includes('disposable')) {
+    return "High - Single-use plastic";
+  } else if (name.includes('recycled') || name.includes('sustainable')) {
+    return "Low - Sustainable packaging";
+  } else {
+    return "Moderate - Standard product";
+  }
+};
 
 /**
  * Fetch product details from OpenFoodFacts using a barcode

@@ -20,7 +20,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
     const imagePath = path.join(__dirname, "../uploads", req.file.filename);
     console.log("📁 Processing image:", imagePath);
 
-    // 🧠 Step 1: Try to decode barcode from image using OCR (more reliable for server-side)
+// 🧠 Step 1: Try to decode barcode from image using OCR (more reliable for server-side)
     let barcode = null;
 
     try {
