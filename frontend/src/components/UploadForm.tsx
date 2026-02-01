@@ -10,9 +10,10 @@ import { BrowserMultiFormatReader } from "@zxing/browser";
 interface UploadFormProps {
   onBarcodeDetected: (barcode: string) => void;
   isLoading: boolean;
+  onOpenCamera: () => void;
 }
 
-export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) => {
+export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: UploadFormProps) => {
   const [manualBarcode, setManualBarcode] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -69,7 +70,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
       }
 
       const data = await response.json();
-      
+
       if (data.barcode) {
         toast.success("Barcode detected successfully!");
         onBarcodeDetected(data.barcode);
@@ -88,7 +89,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!manualBarcode.trim()) {
       toast.error("Please enter a barcode");
       return;
@@ -110,9 +111,22 @@ export const UploadForm = ({ onBarcodeDetected, isLoading }: UploadFormProps) =>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-3">
-          <Label htmlFor="image-upload" className="text-sm font-medium">
-            Upload Product Image
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="image-upload" className="text-sm font-medium">
+              Upload Product Image
+            </Label>
+
+            <Button
+              type="button"
+              onClick={onOpenCamera}
+              className="flex items-center gap-2 text-sm px-3 py-1.5"
+              variant="outline"
+            >
+              📷 Open Camera
+            </Button>
+          </div>
+
+
           <div className="flex flex-col items-center justify-center gap-4">
             <label
               htmlFor="image-upload"

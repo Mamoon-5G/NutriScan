@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { AnalysisCard } from "@/components/AnalysisCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import LiveScanner from "@/components/LiveScanner";
 
 interface ProductData {
   product_name?: string;
@@ -22,25 +23,27 @@ const Index = () => {
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [analysisData, setAnalysisData] = useState<string>("");
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+
 
   // Fetch product details from API
   const fetchProductDetails = async (barcode: string) => {
     setIsLoadingProduct(true);
-    
+
     try {
       const response = await fetch(`/api/product/${barcode}`);
-      
+
       if (!response.ok) {
         throw new Error("Product not found");
       }
 
       const data = await response.json();
       setProductData(data);
-      
+
       // Automatically trigger analysis after fetching product
       await analyzeProduct(data);
-      
+
       toast.success("Product loaded successfully!");
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -55,7 +58,7 @@ const Index = () => {
   // Analyze product using API
   const analyzeProduct = async (product: ProductData) => {
     setIsLoadingAnalysis(true);
-    
+
     try {
       const response = await fetch("/api/product/analyze", {
         method: "POST",
@@ -102,16 +105,19 @@ const Index = () => {
             </h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover the environmental and nutritional impact of your products. 
+            Discover the environmental and nutritional impact of your products.
             Scan barcodes to get detailed insights and make informed choices.
           </p>
         </div>
 
         {/* Upload Form */}
+
         <UploadForm
           onBarcodeDetected={fetchProductDetails}
           isLoading={isLoadingProduct || isLoadingAnalysis}
+          onOpenCamera={() => setShowCamera(true)}
         />
+
 
         {/* Results Section */}
         {(productData || isLoadingProduct) && (
@@ -155,6 +161,15 @@ const Index = () => {
           </div>
         )}
       </div>
+      {showCamera && (
+        <LiveScanner
+          onDetected={(barcode) => {
+            fetchProductDetails(barcode);
+          }}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
+
     </div>
   );
 };
