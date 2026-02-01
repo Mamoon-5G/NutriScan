@@ -60,10 +60,12 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
     formData.append("image", file);
 
     try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/upload`,
+        {
+          method: "POST",
+          body: formData,
+        });
 
       if (!response.ok) {
         throw new Error("Failed to detect barcode from image");

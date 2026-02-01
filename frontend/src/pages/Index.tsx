@@ -32,7 +32,9 @@ const Index = () => {
     setIsLoadingProduct(true);
 
     try {
-      const response = await fetch(`/api/product/${barcode}`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/product/${barcode}`
+      );
 
       if (!response.ok) {
         throw new Error("Product not found");
@@ -40,8 +42,6 @@ const Index = () => {
 
       const data = await response.json();
       setProductData(data);
-
-      // Automatically trigger analysis after fetching product
       await analyzeProduct(data);
 
       toast.success("Product loaded successfully!");
@@ -60,13 +60,15 @@ const Index = () => {
     setIsLoadingAnalysis(true);
 
     try {
-      const response = await fetch("/api/product/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ product }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/product/analyze`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ product }),
+        });
 
       if (!response.ok) {
         throw new Error("Analysis failed");
