@@ -19,7 +19,7 @@ interface ProductData {
   allergens?: string;
   nova_group?: number;
   rule_based_health_label?: number;
-  ml_health_label?: number;
+  ml_health_label?: number | string;
   environmental_impact?: string;
   labels?: {
     health_label?: number;

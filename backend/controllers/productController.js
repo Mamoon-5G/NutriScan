@@ -1,17 +1,31 @@
 import axios from "axios";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { predictHealthML } from "../utils/mlPredictor.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const CSV_PATH = "./data/training_data.csv";
+// Ensure data directory exists
+const dataDir = path.resolve(__dirname, "../data");
+const CSV_PATH = path.join(dataDir, "training_data.csv");
+
+const ensureDataDir = () => {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log("📁 Created data directory:", dataDir);
+  }
+};
 
 const ensureCSVHeader = () => {
+  ensureDataDir();
   if (!fs.existsSync(CSV_PATH)) {
     fs.writeFileSync(
       CSV_PATH,
       "sugar,fat,salt,fiber,protein,energy,additives,nova,plastic,palm_oil,health_label,eco_label\n"
     );
-    console.log("📄 CSV header created");
+    console.log("📄 CSV header created at:", CSV_PATH);
   }
 };
 
@@ -73,27 +87,30 @@ const generateLabels = (f) => {
 };
 
 
-// Save to CSV
-
 const saveToCSV = (features, labels) => {
-  ensureCSVHeader();
+  try {
+    ensureCSVHeader();
 
-  const row = [
-    features.sugar_100g,
-    features.fat_100g,
-    features.salt_100g,
-    features.fiber_100g,
-    features.protein_100g,
-    features.energy_kcal,
-    features.additives_count,
-    features.nova_group,
-    features.plastic_packaging,
-    features.palm_oil,
-    labels.health_label,
-    labels.eco_label
-  ].join(",");
+    const row = [
+      features.sugar_100g,
+      features.fat_100g,
+      features.salt_100g,
+      features.fiber_100g,
+      features.protein_100g,
+      features.energy_kcal,
+      features.additives_count,
+      features.nova_group,
+      features.plastic_packaging,
+      features.palm_oil,
+      labels.health_label,
+      labels.eco_label
+    ].join(",");
 
-  fs.appendFileSync(CSV_PATH, row + "\n");
+    fs.appendFileSync(CSV_PATH, row + "\n");
+  } catch (err) {
+    console.warn("⚠️ Failed to save to CSV:", err.message);
+    // Don't crash if CSV save fails
+  }
 };
 
 /**
@@ -181,8 +198,41 @@ export const fetchProductByBarcode = async (req, res) => {
     const product = response.data.product;
     console.log(`✅ Product found: ${product.product_name || 'Unknown'}`);
 
-    // Format product data for frontend consumption
-    const productData = {
+    // Extract ML features for rule-based and ML predictions
+    const ml_features = extractMLFeatures(product);
+    const rule_based_labels = generateLabels(ml_features);
+    
+    // Try to save to CSV (non-critical)
+    saveToCSV(ml_features, rule_based_labels);
+
+    // Get ML prediction (optional - won't crash if it fails)
+    let ml_prediction = { ml_health_label: "unavailable" };
+    try {
+      const mlInput = {
+        sugar: ml_features.sugar_100g,
+        fat: ml_features.fat_100g,
+        salt: ml_features.salt_100g,
+        fiber: ml_features.fiber_100g,
+        protein: ml_features.protein_100g,
+        energy: ml_features.energy_kcal,
+        additives: ml_features.additives_count,
+        nova: ml_features.nova_group,
+        plastic: ml_features.plastic_packaging,
+        palm_oil: ml_features.palm_oil,
+      };
+
+      ml_prediction = await predictHealthML(mlInput);
+      console.log(`🤖 ML prediction result:`, ml_prediction);
+    } catch (mlErr) {
+      console.warn("⚠️ ML prediction failed (non-critical):", mlErr.message);
+      // Continue without ML prediction
+    }
+
+    // Format environmental impact
+    const environmentalImpact = getEnvironmentalImpact(product.product_name);
+
+    // Build response with all available data
+    const responseData = {
       product_name: product.product_name || "Unknown Product",
       brands: product.brands || "N/A",
       image_url: product.image_url || product.image_front_url || "",
@@ -192,44 +242,15 @@ export const fetchProductByBarcode = async (req, res) => {
       harmful_ingredients: product.additives_tags || [],
       allergens: product.allergens || "No allergen information available",
       nova_group: product.nova_group || 0,
-      // Keep original data for analysis
       additives_tags: product.additives_tags || [],
-      nutrition_grades: product.nutrition_grades || product.nutriscore_grade || "unknown"
-    };
-    const environmentalImpact = getEnvironmentalImpact(product.product_name);
+      nutrition_grades: product.nutrition_grades || product.nutriscore_grade || "unknown",
 
-    // Merge environmental impact data with product data
-    const ml_features = extractMLFeatures(product);
-    const labels = generateLabels(ml_features);
-    saveToCSV(ml_features, labels);
-
-    // Prepare features for ML
-    const mlInput = {
-      sugar: ml_features.sugar_100g,
-      fat: ml_features.fat_100g,
-      salt: ml_features.salt_100g,
-      fiber: ml_features.fiber_100g,
-      protein: ml_features.protein_100g,
-      energy: ml_features.energy_kcal,
-      additives: ml_features.additives_count,
-      nova: ml_features.nova_group,
-      plastic: ml_features.plastic_packaging,
-      palm_oil: ml_features.palm_oil,
-    };
-
-    const mlPrediction = await predictHealthML(mlInput);
-
-    const responseData = {
-      ...productData,
-      product_name: product.product_name || "Unknown",
-      brands: product.brands || "N/A",
-      image_url: product.image_url || "",
-      ingredients_text: product.ingredients_text || "",
-      rule_based_health_label: labels.health_label,
-      ml_health_label: mlPrediction.ml_health_label,
+      // ML/Analysis data
+      rule_based_health_label: rule_based_labels.health_label,
+      ml_health_label: ml_prediction.ml_health_label,
       environmental_impact: environmentalImpact,
       ml_features,
-      labels,
+      labels: rule_based_labels,
     };
 
     res.json(responseData);

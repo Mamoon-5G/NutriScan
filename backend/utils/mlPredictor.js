@@ -1,28 +1,81 @@
 import { spawn } from "child_process";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ML_SCRIPT_PATH = resolve(__dirname, "../ml/predict_health.py");
+
+const ML_TIMEOUT = 10000; // 10 seconds timeout
 
 export const predictHealthML = (features) => {
-  return new Promise((resolve, reject) => {
-    const python = spawn("python", ["../ml/predict_health.py"]);
+  return new Promise((resolve) => {
+    let timedOut = false;
 
-    python.stdin.write(JSON.stringify(features));
-    python.stdin.end();
+    // Set timeout - if ML takes too long, return unavailable
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      console.warn("⚠️ ML prediction timeout - exceeded 10s");
+      resolve({ ml_health_label: "unavailable" });
+    }, ML_TIMEOUT);
 
-    let result = "";
+    try {
+      const python = spawn("python3", [ML_SCRIPT_PATH], {
+        stdio: ["pipe", "pipe", "pipe"],
+      });
 
-    python.stdout.on("data", (data) => {
-      result += data.toString();
-    });
+      let result = "";
+      let errorOutput = "";
 
-    python.stderr.on("data", (err) => {
-      console.error("ML stderr:", err.toString());
-    });
+      python.stdout.on("data", (data) => {
+        if (!timedOut) {
+          result += data.toString();
+        }
+      });
 
-    python.on("close", () => {
-      try {
-        resolve(JSON.parse(result));
-      } catch (e) {
-        reject("Failed to parse ML output");
-      }
-    });
+      python.stderr.on("data", (err) => {
+        if (!timedOut) {
+          errorOutput += err.toString();
+          console.error("ML stderr:", errorOutput);
+        }
+      });
+
+      python.on("close", (code) => {
+        if (timedOut) return;
+
+        clearTimeout(timeout);
+
+        if (code !== 0) {
+          console.error(`ML script exited with code ${code}`);
+          resolve({ ml_health_label: "unavailable" });
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(result);
+          resolve(parsed);
+        } catch (e) {
+          console.error("Failed to parse ML output:", result, e);
+          resolve({ ml_health_label: "unavailable" });
+        }
+      });
+
+      python.on("error", (err) => {
+        if (!timedOut) {
+          clearTimeout(timeout);
+          console.error("Failed to spawn ML process:", err);
+          resolve({ ml_health_label: "unavailable" });
+        }
+      });
+
+      // Write features to stdin
+      python.stdin.write(JSON.stringify(features));
+      python.stdin.end();
+    } catch (err) {
+      clearTimeout(timeout);
+      console.error("ML execution error:", err);
+      resolve({ ml_health_label: "unavailable" });
+    }
   });
 };
+

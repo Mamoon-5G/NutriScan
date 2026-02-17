@@ -5,6 +5,10 @@ import productRoutes from "./routes/productRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -23,11 +27,11 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Ensure upload folder exists
-const uploadsDir = "uploads";
+// Ensure upload folder exists with absolute path
+const uploadsDir = path.resolve(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log("📁 Created uploads directory");
+  console.log("📁 Created uploads directory:", uploadsDir);
 }
 
 // Serve static files from uploads directory
@@ -62,5 +66,5 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ EcoScan API running on port ${PORT}`);
-  console.log(`📁 Uploads directory: ${path.resolve(uploadsDir)}`);
+  console.log(`📁 Uploads directory: ${uploadsDir}`);
 });
