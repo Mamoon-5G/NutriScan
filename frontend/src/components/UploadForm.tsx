@@ -182,8 +182,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
             <Button
               type="button"
               onClick={onOpenCamera}
-              className="flex items-center gap-2 text-sm px-3 py-1.5"
-              variant="outline"
+              className="flex items-center gap-2 text-sm px-4 py-2 gradient-primary shadow-soft font-semibold"
             >
               📷 Open Camera
             </Button>
