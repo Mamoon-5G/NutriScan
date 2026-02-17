@@ -1,7 +1,13 @@
 import express from "express";
-import { fetchProductByBarcode, analyzeProduct } from "../controllers/productController.js";
+import { fetchProductByBarcode, analyzeProduct, searchProductByName } from "../controllers/productController.js";
 
 const router = express.Router();
+
+/**
+ * GET /api/product/search/:name
+ * - search products by name from OpenFoodFacts
+ */
+router.get("/search/:name", searchProductByName);
 
 /**
  * GET /api/product/:barcode

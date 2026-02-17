@@ -1,6 +1,6 @@
 // API utility functions for NutriScan
 // Base API URL - loaded from .env file via Vite and normalized (no trailing slash)
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 
 /**
  * Upload image to detect barcode

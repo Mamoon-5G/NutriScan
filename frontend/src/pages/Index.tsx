@@ -3,6 +3,7 @@ import { Leaf, Loader2 } from "lucide-react";
 import { UploadForm } from "@/components/UploadForm";
 import { ProductCard } from "@/components/ProductCard";
 import { AnalysisCard } from "@/components/AnalysisCard";
+import { MLAssessmentCard } from "@/components/MLAssessmentCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import LiveScanner from "@/components/LiveScanner";
@@ -17,6 +18,14 @@ interface ProductData {
   harmful_ingredients?: string[];
   allergens?: string;
   nova_group?: number;
+  rule_based_health_label?: number;
+  ml_health_label?: number;
+  environmental_impact?: string;
+  labels?: {
+    health_label?: number;
+    eco_label?: number;
+  };
+  ml_features?: Record<string, number>;
 }
 
 const Index = () => {
@@ -136,6 +145,12 @@ const Index = () => {
             ) : productData ? (
               <>
                 <ProductCard product={productData} />
+                <MLAssessmentCard
+                  rule_based_health_label={productData.rule_based_health_label}
+                  ml_health_label={productData.ml_health_label}
+                  eco_label={productData.labels?.eco_label}
+                  environmental_impact={productData.environmental_impact}
+                />
                 {analysisData && (
                   <AnalysisCard
                     analysis={analysisData}

@@ -59,7 +59,7 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ EcoScan API running on port ${PORT}`);
   console.log(`📁 Uploads directory: ${path.resolve(uploadsDir)}`);
