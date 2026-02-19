@@ -1,6 +1,20 @@
-import { Package, Award, Leaf, AlertTriangle } from "lucide-react";
+import { Package, Award, Leaf, AlertTriangle, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+
+interface IngredientDetail {
+  code: string;
+  name: string;
+  category: string;
+  description: string;
+  why_harmful: string;
+  health_effects: string[];
+  environmental_impact: string;
+  usage: string;
+  risk_level: string;
+  alternatives: string;
+}
 
 interface ProductData {
   product_name?: string;
@@ -10,6 +24,7 @@ interface ProductData {
   ecoscore_grade?: string;
   ingredients_text?: string;
   harmful_ingredients?: string[];
+  harmful_ingredients_details?: IngredientDetail[];
   allergens?: string;
   nova_group?: number;
 }
@@ -37,6 +52,96 @@ const getGradeColor = (grade: string | undefined) => {
     default:
       return "bg-muted text-muted-foreground";
   }
+};
+
+const getRiskLevelColor = (riskLevel: string | undefined) => {
+  if (!riskLevel) return "text-muted-foreground";
+  
+  const level = riskLevel.toLowerCase();
+  if (level.includes("high")) return "text-red-600 font-semibold";
+  if (level.includes("moderate-high")) return "text-orange-600 font-semibold";
+  if (level.includes("moderate")) return "text-yellow-600 font-medium";
+  if (level.includes("low-moderate")) return "text-yellow-500";
+  if (level.includes("low")) return "text-green-600";
+  
+  return "text-muted-foreground";
+};
+
+const IngredientExpandable = ({ ingredient }: { ingredient: IngredientDetail }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border border-border/50 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex-1 text-left">
+          <div className="flex items-center gap-3">
+            <div>
+              <h4 className="font-semibold text-foreground">{ingredient.name}</h4>
+              <p className="text-xs text-muted-foreground mt-1">{ingredient.code.toUpperCase()} • {ingredient.category}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold ${getRiskLevelColor(ingredient.risk_level)}`}>
+            {ingredient.risk_level}
+          </span>
+          <ChevronDown 
+            size={20} 
+            className={`transition-transform ${expanded ? 'rotate-180' : ''} text-muted-foreground`}
+          />
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="bg-muted/30 border-t border-border/50 p-4 space-y-4">
+          <div>
+            <h5 className="text-sm font-semibold text-foreground mb-1">Description</h5>
+            <p className="text-sm text-muted-foreground">{ingredient.description}</p>
+          </div>
+
+          <div>
+            <h5 className="text-sm font-semibold text-destructive mb-2">❌ Why It's Harmful</h5>
+            <p className="text-sm text-foreground bg-destructive/10 rounded p-3 border-l-4 border-destructive">
+              {ingredient.why_harmful}
+            </p>
+          </div>
+
+          <div>
+            <h5 className="text-sm font-semibold text-foreground mb-2">⚠️ Health Effects</h5>
+            <ul className="space-y-1">
+              {ingredient.health_effects.map((effect, idx) => (
+                <li key={idx} className="text-sm text-foreground flex gap-2">
+                  <span className="text-destructive flex-shrink-0">•</span>
+                  <span>{effect}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h5 className="text-xs font-semibold text-muted-foreground mb-1">Environmental Impact</h5>
+              <p className="text-sm text-foreground">{ingredient.environmental_impact}</p>
+            </div>
+            <div>
+              <h5 className="text-xs font-semibold text-muted-foreground mb-1">Common Usage</h5>
+              <p className="text-sm text-foreground">{ingredient.usage}</p>
+            </div>
+          </div>
+
+          <div>
+            <h5 className="text-sm font-semibold text-primary mb-1">✅ Healthier Alternatives</h5>
+            <p className="text-sm text-foreground bg-primary/10 rounded p-3 border-l-4 border-primary">
+              {ingredient.alternatives}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export const ProductCard = ({ product }: ProductCardProps) => {
@@ -101,20 +206,23 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         </div>
 
-        {/* Harmful Ingredients */}
-        {product.harmful_ingredients && product.harmful_ingredients.length > 0 && (
+        {/* Harmful Ingredients - Enhanced Display */}
+        {product.harmful_ingredients_details && product.harmful_ingredients_details.length > 0 && (
           <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              <span className="font-medium text-destructive">Harmful Ingredients Detected</span>
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <span className="font-semibold text-destructive">
+                Harmful Ingredients Detected ({product.harmful_ingredients_details.length})
+              </span>
             </div>
-            <ul className="ml-6 list-disc space-y-1">
-              {product.harmful_ingredients.map((ingredient, index) => (
-                <li key={index} className="text-sm text-foreground">
-                  {ingredient}
-                </li>
+            <p className="text-xs text-muted-foreground mb-3">
+              Click on each ingredient to see detailed information about why it's harmful and healthier alternatives.
+            </p>
+            <div className="space-y-2">
+              {product.harmful_ingredients_details.map((ingredient, index) => (
+                <IngredientExpandable key={`${ingredient.code}-${index}`} ingredient={ingredient} />
               ))}
-            </ul>
+            </div>
           </div>
         )}
 

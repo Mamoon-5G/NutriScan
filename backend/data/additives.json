@@ -1,0 +1,255 @@
+{
+  "e150d": {
+    "name": "Caramel Class IV",
+    "category": "Coloring",
+    "description": "Artificial coloring agent derived from heated sugars",
+    "health_effects": [
+      "May contain 4-methylimidazole (4-MEI) - a possible carcinogen",
+      "Can cause digestive issues in sensitive individuals",
+      "Long-term consumption linked to potential liver and kidney concerns"
+    ],
+    "why_harmful": "Studies suggest 4-MEI, a byproduct of the caramelization process, may increase cancer risk with chronic exposure",
+    "environmental_impact": "Low direct impact but energy-intensive production",
+    "usage": "Cola drinks, sauces, baked goods",
+    "risk_level": "Moderate",
+    "alternatives": "Use natural colorants like beet juice or turmeric"
+  },
+
+  "e211": {
+    "name": "Sodium Benzoate",
+    "category": "Preservative",
+    "description": "Chemical preservative used to prevent bacterial and fungal growth",
+    "health_effects": [
+      "May cause hyperactivity in children, especially when combined with artificial dyes",
+      "Can trigger allergies or asthma in sensitive individuals",
+      "When combined with Vitamin C (ascorbic acid), may form benzene - a known carcinogen",
+      "May affect gut microbiome and nutrient absorption"
+    ],
+    "why_harmful": "Can form benzene in beverages containing both sodium benzoate and ascorbic acid; linked to ADHD symptoms in children",
+    "environmental_impact": "Moderate - breaks down slowly in environment",
+    "usage": "Soft drinks, fruit juices, sauces, condiments",
+    "risk_level": "Moderate-High",
+    "alternatives": "Use natural preservatives like salt, honey, or vinegar"
+  },
+
+  "e330": {
+    "name": "Citric Acid",
+    "category": "Acidity Regulator",
+    "description": "Natural acid often derived from citrus fruits, used to regulate pH",
+    "health_effects": [
+      "Generally safe in small quantities",
+      "May cause tooth enamel erosion if consumed excessively",
+      "Can trigger sensitivity in people with citrus allergies"
+    ],
+    "why_harmful": "Not highly harmful - mainly concerns are dental erosion and allergic reactions in susceptible individuals",
+    "environmental_impact": "Low - naturally derived or easily biodegradable",
+    "usage": "Beverages, candies, jams, packaged foods",
+    "risk_level": "Low",
+    "alternatives": "Already a natural ingredient; minimal need for alternatives"
+  },
+
+  "e331": {
+    "name": "Sodium Citrate",
+    "category": "Acidity Regulator, Emulsifier",
+    "description": "Sodium salt of citric acid used as pH buffer and preservative",
+    "health_effects": [
+      "Generally well-tolerated in small quantities",
+      "High sodium content may contribute to hypertension",
+      "Can cause upset stomach in sensitive individuals",
+      "May interact with certain medications"
+    ],
+    "why_harmful": "Primary concern is sodium content; not recommended for those with high blood pressure or on sodium-restricted diets",
+    "environmental_impact": "Low - easily biodegradable",
+    "usage": "Cheese products, processed meats, beverages, instant powders",
+    "risk_level": "Low-Moderate",
+    "alternatives": "Potassium citrate for those needing low-sodium option"
+  },
+
+  "e415": {
+    "name": "Xanthan Gum",
+    "category": "Thickener, Stabilizer",
+    "description": "Polysaccharide produced from bacteria fermentation, used to thicken and stabilize products",
+    "health_effects": [
+      "Generally recognized as safe by FDA",
+      "May cause bloating and digestive gas in some individuals",
+      "Can affect people with severe plant allergies",
+      "High consumption may slow gastrointestinal transit"
+    ],
+    "why_harmful": "Mostly safe but can cause digestive discomfort; concern mainly for those with sensitive digestive systems",
+    "environmental_impact": "Low - biodegradable",
+    "usage": "Salad dressings, sauces, gluten-free baked goods, ice cream",
+    "risk_level": "Low",
+    "alternatives": "Gelatin, agar, guar gum for specific applications"
+  },
+
+  "e621": {
+    "name": "Monosodium Glutamate (MSG)",
+    "category": "Flavor Enhancer",
+    "description": "Sodium salt of glutamic acid used to enhance savory flavors",
+    "health_effects": [
+      "May cause 'MSG Symptom Complex': headaches, flushing, chest pain",
+      "Can trigger migraines in sensitive individuals",
+      "May contribute to obesity when consumed in high amounts",
+      "Linked to excitotoxicity - overstimulation of nerve cells"
+    ],
+    "why_harmful": "Can over-stimulate taste receptors and potentially nerve cells; triggers adverse reactions in MSG-sensitive people",
+    "environmental_impact": "Low - readily biodegradable",
+    "usage": "Instant noodles, soups, seasonings, savory snacks, Asian foods",
+    "risk_level": "Moderate",
+    "alternatives": "Reduce salt, use herbs and spices for flavor enhancement"
+  },
+
+  "e202": {
+    "name": "Potassium Sorbate",
+    "category": "Preservative",
+    "description": "Potassium salt of sorbic acid used to prevent mold and yeast growth",
+    "health_effects": [
+      "May cause histamine release in susceptible individuals",
+      "Can trigger allergic reactions and asthma attacks",
+      "Has been shown to damage DNA in cell studies",
+      "May affect nutrient absorption"
+    ],
+    "why_harmful": "DNA damage observed in laboratory studies; can trigger severe allergic reactions in sensitive individuals",
+    "environmental_impact": "Moderate - slowly biodegradable",
+    "usage": "Yogurt, cheese, dried fruits, beverages, baked goods",
+    "risk_level": "Moderate-High",
+    "alternatives": "Use natural preservatives like salt, sugar, or vinegar"
+  },
+
+  "e310": {
+    "name": "Propyl Gallate",
+    "category": "Antioxidant",
+    "description": "Synthetic antioxidant used to prevent fat and oil rancidity",
+    "health_effects": [
+      "Classified as possibly carcinogenic by IARC (Group 2B)",
+      "May cause allergic reactions and digestive issues",
+      "Linked to thyroid dysfunction",
+      "Can accumulate in body tissues"
+    ],
+    "why_harmful": "Possible carcinogen; banned in several countries; potential to bioaccumulate in fatty tissues",
+    "environmental_impact": "Moderate - does not readily biodegrade",
+    "usage": "Oils, fats, cereals, processed meats",
+    "risk_level": "High",
+    "alternatives": "Vitamin E (tocopherol), Vitamin C, rosemary extract"
+  },
+
+  "e320": {
+    "name": "Butylated Hydroxyanisole (BHA)",
+    "category": "Antioxidant, Preservative",
+    "description": "Synthetic antioxidant used to prevent oxidation of fats and oils",
+    "health_effects": [
+      "Considered a possible carcinogen (IARC Group 2A)",
+      "May disrupt hormone balance and endocrine function",
+      "Linked to respiratory tract tumors in animal studies",
+      "Can cause allergic responses"
+    ],
+    "why_harmful": "Probable carcinogen; endocrine disruptor; banned in EU and Japan",
+    "environmental_impact": "High - persistent in environment",
+    "usage": "Oils, fats, cereals, processed meats, chewing gum",
+    "risk_level": "High",
+    "alternatives": "Vitamin E, Vitamin C, rosemary extract, natural antioxidants"
+  },
+
+  "e321": {
+    "name": "Butylated Hydroxytoluene (BHT)",
+    "category": "Antioxidant, Preservative",
+    "description": "Synthetic antioxidant similar to BHA, used to preserve fats",
+    "health_effects": [
+      "Possible carcinogen (IARC Group 2B)",
+      "Endocrine disruptor - may affect hormone levels",
+      "Can cause hyperactivity in children",
+      "May damage liver and kidneys with chronic exposure"
+    ],
+    "why_harmful": "Potential carcinogen; endocrine disrupting properties; banned in EU",
+    "environmental_impact": "High - persistent and bioaccumulative",
+    "usage": "Oils, gum, cereals, baked goods, fast food",
+    "risk_level": "High",
+    "alternatives": "Vitamin E, rosemary extract, ascorbyl palmitate"
+  },
+
+  "e250": {
+    "name": "Sodium Nitrite",
+    "category": "Preservative, Curing Agent, Coloring Agent",
+    "description": "Chemical used to preserve meat products and give them pink color",
+    "health_effects": [
+      "Reacts with proteins to form N-nitrosamines - potent carcinogens",
+      "Increases risk of colorectal cancer with regular consumption",
+      "May cause methemoglobinemia in infants",
+      "Depletes vitamin C in the body"
+    ],
+    "why_harmful": "Forms carcinogenic compounds when combined with proteins; strong link to colorectal cancer",
+    "environmental_impact": "Moderate - contaminates water sources",
+    "usage": "Cured meats, bacon, ham, hot dogs, deli meats",
+    "risk_level": "High",
+    "alternatives": "Use salt-curing without nitrites; choose uncured meats"
+  },
+
+  "e951": {
+    "name": "Aspartame",
+    "category": "Artificial Sweetener",
+    "description": "Non-caloric artificial sweetener approximately 200x sweeter than sugar",
+    "health_effects": [
+      "Contains phenylalanine - dangerous for people with phenylketonuria (PKU)",
+      "May increase appetite and promote weight gain despite zero calories",
+      "Linked to migraines and headaches in sensitive individuals",
+      "Metabolizes into methanol and formaldehyde in the body",
+      "Some studies suggest potential neurological effects"
+    ],
+    "why_harmful": "Metabolizes into toxic compounds; brain accessibility questioned; unsafe for PKU patients",
+    "environmental_impact": "Very low - breaks down quickly",
+    "usage": "Diet sodas, sugar-free gum, artificial sweetened yogurt, diet desserts",
+    "risk_level": "Moderate-High",
+    "alternatives": "Stevia, monk fruit, erythritol, xylitol"
+  },
+
+  "e952": {
+    "name": "Sodium Cyclamate",
+    "category": "Artificial Sweetener",
+    "description": "Non-nutritive sweetener banned in US but allowed in many countries",
+    "health_effects": [
+      "Banned in USA due to cancer concerns",
+      "May cause allergic reactions and digestive issues",
+      "Potential liver and kidney toxin",
+      "Not suitable for children or pregnant women"
+    ],
+    "why_harmful": "Banned in USA and 30+ countries; potential carcinogen and organ toxin",
+    "environmental_impact": "Moderate - persists in body and environment",
+    "usage": "Diet drinks, artificial sweetened products (mainly outside USA)",
+    "risk_level": "High",
+    "alternatives": "Stevia, sugarcane sugar, honey"
+  },
+
+  "e129": {
+    "name": "Allura Red AC (Food Red 17)",
+    "category": "Food Coloring",
+    "description": "Synthetic red food dye derived from petroleum",
+    "health_effects": [
+      "Can trigger hyperactivity in children",
+      "May cause allergic reactions and hives",
+      "Contains benzidine metabolites - potential carcinogens",
+      "May worsen ADHD symptoms"
+    ],
+    "why_harmful": "Petroleum-based dye; linked to behavioral issues in children; contains potential carcinogenic metabolites",
+    "environmental_impact": "Moderate - not readily biodegradable",
+    "usage": "Soft drinks, candies, ice cream, processed foods, cosmetics",
+    "risk_level": "Moderate",
+    "alternatives": "Beet juice, carmine, natural strawberry coloring"
+  },
+
+  "e104": {
+    "name": "Quinoline Yellow (Food Yellow 13)",
+    "category": "Food Coloring",
+    "description": "Synthetic yellow food dye commonly used in beverages",
+    "health_effects": [
+      "May trigger allergic reactions including urticaria",
+      "Can cause hypersensitivity in asthmatic individuals",
+      "Potential reproductive and developmental toxin",
+      "Oil-soluble dye that concentrates in fatty tissues"
+    ],
+    "why_harmful": "Can concentrate in body tissues; triggers severe allergies; questionable reproductive safety",
+    "environmental_impact": "High - persists in environment",
+    "usage": "Soft drinks, fruit juices, desserts, confectionery",
+    "risk_level": "Moderate-High",
+    "alternatives": "Turmeric, saffron, natural yellow coloring"
+  }
+}

@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { predictHealthML } from "../utils/mlPredictor.js";
+import { getHarmfulIngredientsWithDetails } from "../utils/ingredientLookup.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -231,6 +232,10 @@ export const fetchProductByBarcode = async (req, res) => {
     // Format environmental impact
     const environmentalImpact = getEnvironmentalImpact(product.product_name);
 
+    // Get detailed information for harmful ingredients
+    const harmfulIngredientsArray = product.additives_tags || [];
+    const harmfulIngredientsWithDetails = getHarmfulIngredientsWithDetails(harmfulIngredientsArray);
+
     // Build response with all available data
     const responseData = {
       product_name: product.product_name || "Unknown Product",
@@ -239,7 +244,8 @@ export const fetchProductByBarcode = async (req, res) => {
       nutrition_grade: product.nutrition_grades || product.nutriscore_grade || "unknown",
       ecoscore_grade: product.ecoscore_grade || "unknown",
       ingredients_text: product.ingredients_text || "No ingredients information available",
-      harmful_ingredients: product.additives_tags || [],
+      harmful_ingredients: harmfulIngredientsArray || [],
+      harmful_ingredients_details: harmfulIngredientsWithDetails,
       allergens: product.allergens || "No allergen information available",
       nova_group: product.nova_group || 0,
       additives_tags: product.additives_tags || [],
