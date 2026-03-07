@@ -47,14 +47,14 @@ app.get("/", (req, res) => res.send("🌍 EcoScan API Running"));
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error("❌ Server Error:", error);
-  
+
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
     }
     return res.status(400).json({ error: error.message });
   }
-  
+
   res.status(500).json({ error: 'Internal server error' });
 });
 
@@ -63,8 +63,12 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ EcoScan API running on port ${PORT}`);
-  console.log(`📁 Uploads directory: ${uploadsDir}`);
-});
+const PORT = process.env.PORT || 3001;
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`✅ EcoScan API running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
