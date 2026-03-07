@@ -17,15 +17,17 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
       return res.status(400).json({ error: "No image file uploaded" });
     }
 
-    const imagePath = path.join(__dirname, "../uploads", req.file.filename);
+    const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+    const uploadsDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
+    const imagePath = path.join(uploadsDir, req.file.filename);
     console.log("📁 Processing image:", imagePath);
 
-// 🧠 Step 1: Try to decode barcode from image using OCR (more reliable for server-side)
+    // 🧠 Step 1: Try to decode barcode from image using OCR (more reliable for server-side)
     let barcode = null;
 
     try {
       console.log("🔍 Attempting barcode detection via OCR...");
-      
+
       // Use Tesseract.js for both OCR and barcode detection
       const { data: { text } } = await Tesseract.recognize(imagePath, "eng", {
         logger: m => {
@@ -34,9 +36,9 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
           }
         }
       });
-      
+
       console.log("📝 OCR Raw text:", text);
-      
+
       // Look for barcode-like patterns in OCR text (8-13 digits)
       const barcodePatterns = [
         /\b\d{13}\b/g,  // EAN-13 (most common)
@@ -44,7 +46,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
         /\b\d{8}\b/g,   // EAN-8
         /\b\d{10}\b/g,  // ISBN-10
       ];
-      
+
       for (const pattern of barcodePatterns) {
         const matches = text.match(pattern);
         if (matches && matches.length > 0) {
@@ -53,7 +55,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
           break;
         }
       }
-      
+
       if (!barcode) {
         // Try to find any sequence of digits that might be a barcode
         const allDigits = text.match(/\d+/g);
@@ -66,7 +68,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
           }
         }
       }
-      
+
     } catch (err) {
       console.warn("⚠️ OCR barcode detection failed:", err.message);
     }
@@ -80,35 +82,37 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
 
     // 🧠 Step 4: Return result
     if (barcode) {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         barcode: barcode,
-        message: "Barcode detected successfully" 
+        message: "Barcode detected successfully"
       });
     } else {
-      res.json({ 
-        success: false, 
+      res.json({
+        success: false,
         error: "No barcode detected in the image",
-        message: "Please try a clearer image or enter the barcode manually" 
+        message: "Please try a clearer image or enter the barcode manually"
       });
     }
 
   } catch (error) {
     console.error("❌ Upload processing failed:", error);
-    
+
     // Cleanup temp file if it exists
     if (req.file) {
       try {
-        const imagePath = path.join(__dirname, "../uploads", req.file.filename);
+        const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+        const uploadsDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
+        const imagePath = path.join(uploadsDir, req.file.filename);
         fs.unlinkSync(imagePath);
       } catch (cleanupError) {
         console.warn("⚠️ Failed to cleanup temp file after error:", cleanupError.message);
       }
     }
-    
-    res.status(500).json({ 
-      error: "Failed to process image", 
-      details: error.message 
+
+    res.status(500).json({
+      error: "Failed to process image",
+      details: error.message
     });
   }
 };

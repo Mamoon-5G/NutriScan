@@ -6,9 +6,12 @@ import { uploadAndAnalyzeProduct } from "../controllers/uploadController.js";
 const router = express.Router();
 
 // Configure multer for file uploads
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const uploadDir = isVercel ? "/tmp/uploads" : "uploads/";
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     // Generate unique filename with timestamp

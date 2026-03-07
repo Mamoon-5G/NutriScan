@@ -29,11 +29,19 @@ app.options("*", cors())
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Ensure upload folder exists with absolute path
-const uploadsDir = path.resolve(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log("📁 Created uploads directory:", uploadsDir);
+// Run on Vercel?
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+
+// Ensure upload folder exists (use /tmp on Vercel, which is writable)
+const uploadsDir = isVercel ? path.join("/tmp", "uploads") : path.resolve(__dirname, "uploads");
+
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log("📁 Created uploads directory:", uploadsDir);
+  }
+} catch (error) {
+  console.error("⚠️ Failed to create uploads directory:", error.message);
 }
 
 // Serve static files from uploads directory
