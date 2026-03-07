@@ -5,20 +5,8 @@ import { uploadAndAnalyzeProduct } from "../controllers/uploadController.js";
 
 const router = express.Router();
 
-// Configure multer for file uploads
-const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
-const uploadDir = isVercel ? "/tmp/uploads" : "uploads/";
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for file uploads in memory
+const storage = multer.memoryStorage();
 
 // File filter to only allow images
 const fileFilter = (req, file, cb) => {

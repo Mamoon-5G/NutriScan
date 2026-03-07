@@ -17,10 +17,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
       return res.status(400).json({ error: "No image file uploaded" });
     }
 
-    const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
-    const uploadsDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
-    const imagePath = path.join(uploadsDir, req.file.filename);
-    console.log("📁 Processing image:", imagePath);
+    console.log("📁 Processing image from memory buffer");
 
     // 🧠 Step 1: Try to decode barcode from image using OCR (more reliable for server-side)
     let barcode = null;
@@ -28,8 +25,8 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
     try {
       console.log("🔍 Attempting barcode detection via OCR...");
 
-      // Use Tesseract.js for both OCR and barcode detection
-      const { data: { text } } = await Tesseract.recognize(imagePath, "eng", {
+      // Use Tesseract.js for both OCR and barcode detection, passing the memory buffer
+      const { data: { text } } = await Tesseract.recognize(req.file.buffer, "eng", {
         logger: m => {
           if (m.status === 'recognizing text') {
             console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
@@ -73,12 +70,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
       console.warn("⚠️ OCR barcode detection failed:", err.message);
     }
 
-    // 🧹 Step 3: Cleanup temp image
-    try {
-      fs.unlinkSync(imagePath);
-    } catch (cleanupError) {
-      console.warn("⚠️ Failed to cleanup temp file:", cleanupError.message);
-    }
+
 
     // 🧠 Step 4: Return result
     if (barcode) {
@@ -98,17 +90,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
   } catch (error) {
     console.error("❌ Upload processing failed:", error);
 
-    // Cleanup temp file if it exists
-    if (req.file) {
-      try {
-        const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
-        const uploadsDir = isVercel ? "/tmp/uploads" : path.join(__dirname, "../uploads");
-        const imagePath = path.join(uploadsDir, req.file.filename);
-        fs.unlinkSync(imagePath);
-      } catch (cleanupError) {
-        console.warn("⚠️ Failed to cleanup temp file after error:", cleanupError.message);
-      }
-    }
+
 
     res.status(500).json({
       error: "Failed to process image",

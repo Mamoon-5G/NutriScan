@@ -1,81 +1,73 @@
-import { spawn } from "child_process";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const ML_SCRIPT_PATH = resolve(__dirname, "../ml/predict_health.py");
+const WEIGHTS_PATH = resolve(__dirname, "model_weights.json");
 
-const ML_TIMEOUT = 10000; // 10 seconds timeout
+// Cache weights so we only read from disk once
+let modelWeights = null;
 
-export const predictHealthML = (features) => {
-  return new Promise((resolve) => {
-    let timedOut = false;
-
-    // Set timeout - if ML takes too long, return unavailable
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      console.warn("⚠️ ML prediction timeout - exceeded 10s");
-      resolve({ ml_health_label: "unavailable" });
-    }, ML_TIMEOUT);
-
-    try {
-      const python = spawn("python3", [ML_SCRIPT_PATH], {
-        stdio: ["pipe", "pipe", "pipe"],
-      });
-
-      let result = "";
-      let errorOutput = "";
-
-      python.stdout.on("data", (data) => {
-        if (!timedOut) {
-          result += data.toString();
-        }
-      });
-
-      python.stderr.on("data", (err) => {
-        if (!timedOut) {
-          errorOutput += err.toString();
-          console.error("ML stderr:", errorOutput);
-        }
-      });
-
-      python.on("close", (code) => {
-        if (timedOut) return;
-
-        clearTimeout(timeout);
-
-        if (code !== 0) {
-          console.error(`ML script exited with code ${code}`);
-          resolve({ ml_health_label: "unavailable" });
-          return;
-        }
-
-        try {
-          const parsed = JSON.parse(result);
-          resolve(parsed);
-        } catch (e) {
-          console.error("Failed to parse ML output:", result, e);
-          resolve({ ml_health_label: "unavailable" });
-        }
-      });
-
-      python.on("error", (err) => {
-        if (!timedOut) {
-          clearTimeout(timeout);
-          console.error("Failed to spawn ML process:", err);
-          resolve({ ml_health_label: "unavailable" });
-        }
-      });
-
-      // Write features to stdin
-      python.stdin.write(JSON.stringify(features));
-      python.stdin.end();
-    } catch (err) {
-      clearTimeout(timeout);
-      console.error("ML execution error:", err);
-      resolve({ ml_health_label: "unavailable" });
-    }
-  });
+const loadWeights = () => {
+  if (modelWeights) return modelWeights;
+  try {
+    const rawData = fs.readFileSync(WEIGHTS_PATH, "utf8");
+    modelWeights = JSON.parse(rawData);
+    return modelWeights;
+  } catch (error) {
+    console.error("❌ Failed to load ML model weights:", error.message);
+    return null;
+  }
 };
+
+export const predictHealthML = async (input_data) => {
+  const weights = loadWeights();
+  if (!weights) {
+    return { ml_health_label: "unavailable" };
+  }
+
+  try {
+    // Extract features in the exact same order as the Python script
+    const features = [
+      input_data.sugar || 0,
+      input_data.fat || 0,
+      input_data.salt || 0,
+      input_data.fiber || 0,
+      input_data.protein || 0,
+      input_data.energy || 0,
+      input_data.additives || 0,
+      input_data.nova || 0,
+      input_data.plastic || 0,
+      input_data.palm_oil || 0,
+    ];
+
+    // Compute dot product of features with coefficients for each class
+    // LogisticRegression (multiclass='multinomial' or 'ovr') computes scores for each class
+    const scores = weights.classes.map((cls, classIndex) => {
+      let score = weights.intercept[classIndex]; // Start with intercept bias
+
+      // Add dot product of coefs and features
+      for (let i = 0; i < features.length; i++) {
+        score += weights.coef[classIndex][i] * features[i];
+      }
+      return { class: cls, score };
+    });
+
+    // Find the class with the highest score (argmax)
+    scores.sort((a, b) => b.score - a.score);
+    let prediction = scores[0].class;
+
+    // Ensure prediction is valid (0, 1, or 2)
+    if (![0, 1, 2].includes(prediction)) {
+      prediction = 1; // Default to moderate if invalid
+    }
+
+    return { ml_health_label: prediction };
+  } catch (error) {
+    console.error("❌ JS ML prediction error:", error.message);
+    return { ml_health_label: "unavailable" };
+  }
+};
+
 
