@@ -3,6 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface MLAssessmentCardProps {
+  unified_score?: {
+    overall_eco_score?: 'High' | 'Moderate' | 'Low';
+    health_score?: 'High' | 'Moderate' | 'Low';
+    confidence?: number;
+  };
   rule_based_health_label?: number;
   ml_health_label?: number | string;
   eco_label?: number;
@@ -61,6 +66,7 @@ const isMLAvailable = (ml_health_label: number | string | undefined): boolean =>
 };
 
 export const MLAssessmentCard = ({
+  unified_score,
   rule_based_health_label,
   ml_health_label,
   eco_label,
@@ -77,6 +83,29 @@ export const MLAssessmentCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Unified Score Assessment */}
+        {unified_score && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Unified Health & Eco Score</span>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Badge className={`text-sm font-semibold px-3 py-1 w-full justify-center ${
+                unified_score.health_score === 'High' ? 'bg-red-100 text-red-800' : unified_score.health_score === 'Moderate' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+              }`}>
+                Health: {unified_score.health_score}
+              </Badge>
+              <Badge className={`text-sm font-semibold px-3 py-1 w-full justify-center ${
+                unified_score.overall_eco_score === 'High' ? 'bg-red-100 text-red-800' : unified_score.overall_eco_score === 'Moderate' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+              }`}>
+                Eco: {unified_score.overall_eco_score}
+              </Badge>
+              <span className="text-xs text-muted-foreground self-center">Confidence: {Math.round((unified_score.confidence ?? 1) * 100)}%</span>
+            </div>
+          </div>
+        )}
+
         {/* Health Assessment */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">

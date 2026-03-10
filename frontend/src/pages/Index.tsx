@@ -8,6 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import LiveScanner from "@/components/LiveScanner";
 
+interface UnifiedScore {
+  overall_eco_score: 'High' | 'Moderate' | 'Low';
+  health_score: 'High' | 'Moderate' | 'Low';
+  confidence: number;
+}
+
 interface ProductData {
   product_name?: string;
   brands?: string;
@@ -26,6 +32,7 @@ interface ProductData {
     eco_label?: number;
   };
   ml_features?: Record<string, number>;
+  unified_score?: UnifiedScore;
 }
 
 const Index = () => {
@@ -146,6 +153,7 @@ const Index = () => {
               <>
                 <ProductCard product={productData} />
                 <MLAssessmentCard
+                  unified_score={productData.unified_score}
                   rule_based_health_label={productData.rule_based_health_label}
                   ml_health_label={productData.ml_health_label}
                   eco_label={productData.labels?.eco_label}
