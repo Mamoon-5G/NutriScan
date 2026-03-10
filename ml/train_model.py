@@ -12,7 +12,7 @@ import os
 csv_path = "../backend/data/training_data.csv"
 df = pd.read_csv(csv_path)
 
-print("✅ Dataset loaded")
+print("Dataset loaded")
 print("Initial shape:", df.shape)
 
 # ===============================
@@ -40,7 +40,7 @@ print("After cleaning:", df.shape)
 # 3. LABEL DISTRIBUTION CHECK
 # ===============================
 
-print("\n📊 Health label distribution:")
+print("\nHealth label distribution:")
 print(df["health_label"].value_counts())
 
 # ===============================
@@ -75,8 +75,8 @@ model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
 
-print("\n📊 Accuracy:", accuracy_score(y_test, y_pred))
-print("\n📄 Classification Report:")
+print("\nAccuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:")
 print(classification_report(y_test, y_pred, zero_division=0))
 
 # ===============================
@@ -86,4 +86,21 @@ print(classification_report(y_test, y_pred, zero_division=0))
 os.makedirs("models", exist_ok=True)
 joblib.dump(model, "models/health_model.pkl")
 
-print("\n💾 Model saved at: ml/models/health_model.pkl")
+print("\nModel saved at: ml/models/health_model.pkl")
+
+# ===============================
+# 9. EXPORT WEIGHTS FOR JAVASCRIPT
+# ===============================
+import json
+
+weights = {
+    "coef": model.coef_.tolist(),
+    "intercept": model.intercept_.tolist(),
+    "classes": model.classes_.tolist()
+}
+
+out_path = os.path.join(os.path.dirname(__file__), "../backend/utils/model_weights.json")
+with open(out_path, "w") as f:
+    json.dump(weights, f, indent=2)
+
+print(f"\nJavaScript weights successfully exported to: backend/utils/model_weights.json")

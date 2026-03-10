@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { predictHealthML } from "../utils/mlPredictor.js";
 import { getHarmfulIngredientsWithDetails } from "../utils/ingredientLookup.js";
+import { calculateUnifiedScore } from "../utils/scoreCalculator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -236,6 +237,14 @@ export const fetchProductByBarcode = async (req, res) => {
     const harmfulIngredientsArray = product.additives_tags || [];
     const harmfulIngredientsWithDetails = getHarmfulIngredientsWithDetails(harmfulIngredientsArray);
 
+    // Centralized scoring
+    const unifiedScore = calculateUnifiedScore({
+      ml_prediction,
+      rule_based_labels,
+      environmentalImpact,
+      confidence: 1.0 // Placeholder, can be improved with model/LLM confidence
+    });
+
     // Build response with all available data
     const responseData = {
       product_name: product.product_name || "Unknown Product",
@@ -257,6 +266,9 @@ export const fetchProductByBarcode = async (req, res) => {
       environmental_impact: environmentalImpact,
       ml_features,
       labels: rule_based_labels,
+
+      // Unified scoring
+      unified_score: unifiedScore
     };
 
     res.json(responseData);
@@ -294,6 +306,14 @@ export const analyzeProduct = async (req, res) => {
       : harmfulIngredients.length > 0
         ? "Moderate – contains some additives"
         : "Low – minimal harmful ingredients detected";
+
+    // Centralized scoring (reuse rule-based for now, as ML/LLM not available here)
+    const rule_based_labels = { health_label: harmfulIngredients.length > 3 ? 2 : harmfulIngredients.length > 0 ? 1 : 0, eco_label: ecoScore === 'd' || ecoScore === 'e' ? 2 : ecoScore === 'c' ? 1 : 0 };
+    const unifiedScore = calculateUnifiedScore({
+      rule_based_labels,
+      environmentalImpact: ecoScore,
+      confidence: 1.0
+    });
 
     // Create formatted analysis string
     const analysisText = `
@@ -334,7 +354,7 @@ ${nutritionGrade === 'a' || nutritionGrade === 'b'
       }
     `.trim();
 
-    res.json({ analysis: analysisText });
+    res.json({ analysis: analysisText, unified_score: unifiedScore });
   } catch (error) {
     console.error("Error analyzing product:", error);
     res.status(500).json({ error: "Failed to analyze product" });
