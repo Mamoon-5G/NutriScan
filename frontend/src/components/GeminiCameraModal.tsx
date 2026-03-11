@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Camera, X, RotateCcw, Zap, AlertCircle } from "lucide-react";
+import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface GeminiCameraModalProps {
@@ -8,7 +8,27 @@ interface GeminiCameraModalProps {
   onClose: () => void;
 }
 
-type Stage = "camera" | "preview" | "result";
+type Stage = "camera" | "analyzing" | "result";
+
+const parseAnalysis = (text: string) => {
+  if (text.trim().toLowerCase() === "invalid") {
+    return {
+      product: "Not recognized as food",
+      classification: "Invalid",
+      reason: "Please capture a clear photo of a food item.",
+    };
+  }
+
+  const productMatch = text.match(/Product:\s*(.+)/i);
+  const classMatch = text.match(/classification:\s*(.+)/i);
+  const reasonMatch = text.match(/reason:\s*(.+)/i);
+
+  return {
+    product: productMatch ? productMatch[1].trim() : "Unknown Product",
+    classification: classMatch ? classMatch[1].trim() : "Unknown",
+    reason: reasonMatch ? reasonMatch[1].trim() : text,
+  };
+};
 
 export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -16,8 +36,6 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
   const streamRef = useRef<MediaStream | null>(null);
 
   const [stage, setStage] = useState<Stage>("camera");
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -46,7 +64,6 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
   useEffect(() => {
     if (open) {
       setStage("camera");
-      setCapturedImage(null);
       setAnalysisResult(null);
       startCamera();
     } else {
@@ -55,7 +72,7 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
     return () => stopCamera();
   }, [open, startCamera, stopCamera]);
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
@@ -66,23 +83,21 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-    setCapturedImage(dataUrl);
     stopCamera();
-    setStage("preview");
+    
+    setStage("analyzing");
+    await analyzeImage(dataUrl);
   };
 
   const retake = () => {
-    setCapturedImage(null);
     setAnalysisResult(null);
     setStage("camera");
     startCamera();
   };
 
-  const analyzeImage = async () => {
-    if (!capturedImage) return;
-    setIsAnalyzing(true);
+  const analyzeImage = async (imageDataUrl: string) => {
     try {
-      const fetchRes = await fetch(capturedImage);
+      const fetchRes = await fetch(imageDataUrl);
       const blob = await fetchRes.blob();
       const formData = new FormData();
       formData.append("image", blob, "food-capture.jpg");
@@ -103,14 +118,13 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to analyze image";
       toast.error(message);
-    } finally {
-      setIsAnalyzing(false);
+      setStage("camera");
+      startCamera();
     }
   };
 
   const handleClose = () => {
     stopCamera();
-    setCapturedImage(null);
     setAnalysisResult(null);
     setStage("camera");
     onClose();
@@ -177,65 +191,64 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
             </div>
           )}
 
-          {stage === "preview" && capturedImage && (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground text-center">
-                Review your photo, then click <strong>Analyze</strong> to get AI insights
-              </p>
-              <div className="rounded-xl overflow-hidden aspect-video bg-black">
-                <img
-                  src={capturedImage}
-                  alt="Captured food"
-                  className="w-full h-full object-cover"
-                />
+          {stage === "analyzing" && (
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full blur-xl bg-primary/20 animate-pulse" />
+                <Loader2 className="h-12 w-12 text-primary animate-spin relative z-10" />
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={retake} className="flex-1">
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Retake
-                </Button>
-                <Button
-                  onClick={analyzeImage}
-                  disabled={isAnalyzing}
-                  className="flex-1 gradient-primary shadow-soft font-semibold"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Analyze with AI
-                    </>
-                  )}
-                </Button>
-              </div>
+              <p className="text-lg font-medium animate-pulse">Analyzing with AI...</p>
+              <p className="text-sm text-muted-foreground">Identifying food and health impact</p>
             </div>
           )}
 
-          {stage === "result" && analysisResult && capturedImage && (
+          {stage === "result" && analysisResult && (
             <div className="space-y-4">
-              <div className="rounded-xl overflow-hidden max-h-40 bg-black">
-                <img
-                  src={capturedImage}
-                  alt="Analyzed food"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="rounded-xl border border-border bg-muted/30 p-4 max-h-72 overflow-y-auto">
-                <div className="flex items-center gap-2 mb-3">
-                  <Zap className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-sm font-semibold">AI Analysis Result</span>
-                </div>
-                <div className="text-sm whitespace-pre-wrap text-foreground leading-relaxed">
-                  {analysisResult}
-                </div>
-              </div>
-              <Button variant="outline" onClick={retake} className="w-full">
+               {(() => {
+                 const { product, classification, reason } = parseAnalysis(analysisResult);
+                 
+                 let bgColor = "bg-muted/30";
+                 let borderColor = "border-border";
+                 let textColor = "text-foreground";
+                 let icon = <Zap className="h-6 w-6 text-primary" />;
+                 
+                 const clsLower = classification.toLowerCase();
+                 if (clsLower.includes("healthy")) {
+                   bgColor = "bg-green-500/10";
+                   borderColor = "border-green-500/30";
+                   textColor = "text-green-600 dark:text-green-400";
+                   icon = <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" /></div>;
+                 } else if (clsLower.includes("moderately")) {
+                   bgColor = "bg-yellow-500/10";
+                   borderColor = "border-yellow-500/30";
+                   textColor = "text-yellow-600 dark:text-yellow-400";
+                   icon = <div className="h-12 w-12 rounded-full bg-yellow-500/20 flex items-center justify-center"><AlertCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" /></div>;
+                 } else if (clsLower.includes("harmful") || clsLower.includes("invalid")) {
+                   bgColor = "bg-red-500/10";
+                   borderColor = "border-red-500/30";
+                   textColor = "text-red-600 dark:text-red-400";
+                   icon = <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center"><AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" /></div>;
+                 }
+                 
+                 return (
+                   <div className={`rounded-xl border ${borderColor} ${bgColor} p-6 flex flex-col items-center text-center space-y-4 transition-all duration-500 animate-in fade-in zoom-in-95`}>
+                      {icon}
+                      <div>
+                        <h3 className="text-xl font-bold">{product}</h3>
+                        <p className={`text-sm font-bold mt-1 uppercase tracking-wider ${textColor}`}>
+                          {classification}
+                        </p>
+                      </div>
+                      <p className="text-sm leading-relaxed max-w-sm text-muted-foreground font-medium">
+                        {reason}
+                      </p>
+                   </div>
+                 );
+               })()}
+               
+              <Button onClick={retake} className="w-full gradient-primary shadow-soft font-semibold text-white hover:opacity-90 transition-opacity">
                 <Camera className="h-4 w-4 mr-2" />
-                Analyze Another Food
+                {analysisResult.toLowerCase().includes("invalid") ? "Try Again" : "Analyze Another Food"}
               </Button>
             </div>
           )}
