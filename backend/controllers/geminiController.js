@@ -14,7 +14,7 @@ Classification categories:
 
 Rules:
 1. If the image does NOT contain a food or edible product, respond only with:
-invalid
+The captured image is not a food product (or any better sentence)
 
 2. If the image contains food, respond in the following format exactly:
 

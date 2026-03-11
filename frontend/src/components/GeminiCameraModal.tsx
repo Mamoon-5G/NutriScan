@@ -134,10 +134,10 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
-      <div className="relative w-full max-w-lg bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
+      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -150,14 +150,14 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4">
+        <div className="p-3 sm:p-5 space-y-4">
           {stage === "camera" && (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground text-center">
                 Point camera at a food item and capture a photo for AI analysis
               </p>
               {cameraError ? (
-                <div className="flex flex-col items-center justify-center h-64 rounded-xl bg-muted/50 gap-3 border border-dashed border-border">
+                <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[400px] rounded-xl bg-muted/50 gap-3 border border-dashed border-border">
                   <AlertCircle className="h-10 w-10 text-destructive" />
                   <p className="text-sm text-muted-foreground text-center px-4">{cameraError}</p>
                   <Button variant="outline" size="sm" onClick={startCamera}>
@@ -166,7 +166,7 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
                   </Button>
                 </div>
               ) : (
-                <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+                <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] min-h-[320px] sm:min-h-[400px] flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
