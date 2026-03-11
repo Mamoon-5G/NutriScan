@@ -139,7 +139,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
                 className="flex-1 sm:flex-none flex items-center gap-2 text-sm px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-soft font-semibold hover:from-purple-600 hover:to-pink-600 w-full sm:w-auto"
               >
                  <AiOutlineRobot className="h-4 w-4" />
-                 <span>AI Analyze</span>
+                 <span>AI Food Scan</span>
               </Button>
             </div>
           </div>
