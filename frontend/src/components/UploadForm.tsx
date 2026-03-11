@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Upload, Hash, Search, Loader2, X } from "lucide-react";
+import { Upload, Hash, Loader2 } from "lucide-react";
+import { FiCamera } from "react-icons/fi";
+import { AiOutlineRobot } from "react-icons/ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -128,14 +130,16 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
                 onClick={onOpenCamera}
                 className="flex-1 sm:flex-none flex items-center gap-2 text-sm px-4 py-2 gradient-primary shadow-soft font-semibold w-full sm:w-auto"
               >
-                📷 Scan Barcode
+                 <FiCamera className="h-4 w-4" />
+                 <span>Scan Barcode</span>
               </Button>
               <Button
                 type="button"
                 onClick={() => setGeminiModalOpen(true)}
                 className="flex-1 sm:flex-none flex items-center gap-2 text-sm px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-soft font-semibold hover:from-purple-600 hover:to-pink-600 w-full sm:w-auto"
               >
-                🤖 AI Analyze
+                 <AiOutlineRobot className="h-4 w-4" />
+                 <span>AI Analyze</span>
               </Button>
             </div>
           </div>
@@ -218,7 +222,6 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
             <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or</span>
           </div>
         </div>
 
