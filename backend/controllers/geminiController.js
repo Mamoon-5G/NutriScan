@@ -18,6 +18,7 @@ invalid
 
 2. If the image contains food, respond in the following format exactly:
 
+Product: <Name of the product identified>
 classification: <Healthy | Moderately Harmful | Harmful>
 reason: <brief explanation of the nutritional concern or benefit>
 
@@ -37,14 +38,17 @@ reason: <brief explanation of the nutritional concern or benefit>
 Examples:
 
 Example 1:
+Product: Name of the product
 classification: Healthy
 reason: Contains natural ingredients, fiber, and balanced nutrients with low added sugar.
 
 Example 2:
+Product: Name of the product
 classification: Moderately Harmful
 reason: Moderate calorie density and added sugar but not excessively processed.
 
 Example 3:
+Product: Name of the product
 classification: Harmful
 reason: Very high sugar and calories with ultra-processed ingredients and additives.
 
