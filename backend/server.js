@@ -3,6 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import productRoutes from "./routes/productRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import geminiRoutes from "./routes/geminiRoutes.js";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Routes
 app.use("/api/upload", uploadRoutes);
 app.use("/api/product", productRoutes);
+app.use("/api/analyze-food", geminiRoutes);
 
 // Health check endpoint
 app.get("/", (req, res) => res.send("🌍 EcoScan API Running"));

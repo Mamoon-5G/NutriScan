@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { BrowserMultiFormatReader } from "@zxing/browser";
+import { GeminiCameraModal } from "@/components/GeminiCameraModal";
 
 interface SearchResult {
   barcode: string;
@@ -29,6 +30,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [geminiModalOpen, setGeminiModalOpen] = useState(false);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -167,6 +169,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
   };
 
   return (
+    <>
     <Card className="shadow-medium border-border/50">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold">Scan Product</CardTitle>
@@ -184,7 +187,14 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
               onClick={onOpenCamera}
               className="flex items-center gap-2 text-sm px-4 py-2 gradient-primary shadow-soft font-semibold"
             >
-              📷 Open Camera
+              📷 Scan Barcode
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setGeminiModalOpen(true)}
+              className="flex items-center gap-2 text-sm px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-soft font-semibold hover:from-purple-600 hover:to-pink-600"
+            >
+              🤖 AI Analyze
             </Button>
           </div>
 
@@ -362,5 +372,11 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
         </form>
       </CardContent>
     </Card>
+
+    <GeminiCameraModal
+      open={geminiModalOpen}
+      onClose={() => setGeminiModalOpen(false)}
+    />
+    </>
   );
 };
