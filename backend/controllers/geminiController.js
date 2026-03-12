@@ -74,7 +74,7 @@ export const analyzeFoodWithGemini = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2-flash" });
 
     const imageBase64 = req.file.buffer.toString("base64");
     const mimeType = req.file.mimetype;
@@ -89,7 +89,7 @@ export const analyzeFoodWithGemini = async (req, res) => {
       FOOD_ANALYSIS_PROMPT,
     ]);
 
-    const response = await result.response;
+    const response = result.response;
     const analysis = response.text();
 
     return res.json({ analysis });
