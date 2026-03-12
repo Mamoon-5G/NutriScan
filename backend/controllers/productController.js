@@ -16,7 +16,7 @@ const CSV_PATH = path.join(dataDir, "training_data.csv");
 const ensureDataDir = () => {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
-    console.log("Created data directory:", dataDir);
+    console.log("📁 Created data directory:", dataDir);
   }
 };
 
@@ -27,7 +27,7 @@ const ensureCSVHeader = () => {
       CSV_PATH,
       "sugar,fat,salt,fiber,protein,energy,additives,nova,plastic,palm_oil,health_label,eco_label\n"
     );
-    console.log("CSV header created at:", CSV_PATH);
+    console.log("📄 CSV header created at:", CSV_PATH);
   }
 };
 
@@ -90,10 +90,6 @@ const generateLabels = (f) => {
 
 
 const saveToCSV = (features, labels) => {
-  if (process.env.VERCEL) {
-    console.log("Skipping CSV write on Vercel read-only filesystem.");
-    return;
-  }
   try {
     ensureCSVHeader();
 
@@ -114,7 +110,7 @@ const saveToCSV = (features, labels) => {
 
     fs.appendFileSync(CSV_PATH, row + "\n");
   } catch (err) {
-    console.warn("Failed to save to CSV:", err.message);
+    console.warn("⚠️ Failed to save to CSV:", err.message);
     // Don't crash if CSV save fails
   }
 };
@@ -142,46 +138,46 @@ const getEnvironmentalImpact = (productName) => {
 /**
  * Search for products by name using OpenFoodFacts API
  */
-// export const searchProductByName = async (req, res) => {
-//   try {
-//     const { name } = req.params;
+export const searchProductByName = async (req, res) => {
+  try {
+    const { name } = req.params;
 
-//     if (!name || name.trim() === "") {
-//       return res.status(400).json({ error: "Product name is required" });
-//     }
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ error: "Product name is required" });
+    }
 
-//     console.log(`Searching for product by name: ${name}`);
-//     const response = await axios.get(`https://world.openfoodfacts.org/cgi/search.pl`, {
-//       params: {
-//         search_terms: name,
-//         search_simple: 1,
-//         action: "process",
-//         format: "json",
-//         page_size: 5
-//       }
-//     });
+    console.log(`🔍 Searching for product by name: ${name}`);
+    const response = await axios.get(`https://world.openfoodfacts.org/cgi/search.pl`, {
+      params: {
+        search_terms: name,
+        search_simple: 1,
+        action: "process",
+        format: "json",
+        page_size: 5
+      }
+    });
 
-//     if (!response.data.products || response.data.products.length === 0) {
-//       return res.status(404).json({ error: "No products found matching your search" });
-//     }
+    if (!response.data.products || response.data.products.length === 0) {
+      return res.status(404).json({ error: "No products found matching your search" });
+    }
 
-//     // Return top 5 results
-//     const results = response.data.products.slice(0, 5).map(product => ({
-//       barcode: product.barcode || product.code || "",
-//       product_name: product.product_name || "Unknown Product",
-//       brands: product.brands || "N/A",
-//       image_url: product.image_url || product.image_front_url || "",
-//       nutrition_grade: product.nutrition_grades || product.nutriscore_grade || "unknown",
-//       ecoscore_grade: product.ecoscore_grade || "unknown"
-//     }));
+    // Return top 5 results
+    const results = response.data.products.slice(0, 5).map(product => ({
+      barcode: product.barcode || product.code || "",
+      product_name: product.product_name || "Unknown Product",
+      brands: product.brands || "N/A",
+      image_url: product.image_url || product.image_front_url || "",
+      nutrition_grade: product.nutrition_grades || product.nutriscore_grade || "unknown",
+      ecoscore_grade: product.ecoscore_grade || "unknown"
+    }));
 
-//     console.log(`✅ Found ${results.length} product(s) matching: ${name}`);
-//     res.json({ products: results });
-//   } catch (error) {
-//     console.error("❌ Error searching products:", error);
-//     res.status(500).json({ error: "Failed to search products" });
-//   }
-// };
+    console.log(`✅ Found ${results.length} product(s) matching: ${name}`);
+    res.json({ products: results });
+  } catch (error) {
+    console.error("❌ Error searching products:", error);
+    res.status(500).json({ error: "Failed to search products" });
+  }
+};
 
 /**
  * Fetch product details from OpenFoodFacts using a barcode
@@ -194,7 +190,7 @@ export const fetchProductByBarcode = async (req, res) => {
       return res.status(400).json({ error: "Barcode is required" });
     }
 
-    console.log(`Fetching product data for barcode: ${barcode}`);
+    console.log(`🔍 Fetching product data for barcode: ${barcode}`);
     const response = await axios.get(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
 
     if (response.data.status !== 1 || !response.data.product) {
@@ -202,12 +198,12 @@ export const fetchProductByBarcode = async (req, res) => {
     }
 
     const product = response.data.product;
-    console.log(`Product found: ${product.product_name || 'Unknown'}`);
+    console.log(`✅ Product found: ${product.product_name || 'Unknown'}`);
 
     // Extract ML features for rule-based and ML predictions
     const ml_features = extractMLFeatures(product);
     const rule_based_labels = generateLabels(ml_features);
-
+    
     // Try to save to CSV (non-critical)
     saveToCSV(ml_features, rule_based_labels);
 
@@ -277,7 +273,7 @@ export const fetchProductByBarcode = async (req, res) => {
 
     res.json(responseData);
   } catch (error) {
-    console.error("Error fetching product:", error);
+    console.error("❌ Error fetching product:", error);
     if (error.response?.status === 404) {
       res.status(404).json({ error: "Product not found in database" });
     } else {
