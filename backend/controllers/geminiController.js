@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // ─────────────────────────────────────────────
-// PREDEFINED PROMPT — fill in your instructions:
 const FOOD_ANALYSIS_PROMPT = `You are a nutrition analysis assistant.
 
 Your task is to analyze an image and determine whether the item shown is a food product. 
@@ -14,7 +13,7 @@ Classification categories:
 
 Rules:
 1. If the image does NOT contain a food or edible product, respond only with:
-The captured image is not a food product (or any better sentence)
+The captured image is not a food product.
 
 2. If the image contains food, respond in the following format exactly:
 
@@ -34,32 +33,41 @@ reason: <brief explanation of the nutritional concern or benefit>
 - natural ingredients
 
 4. Keep the explanation short (1-2 sentences).
-5. If the image contains packaged food products just add one more sentence at the end
-<Scan Barcode of this product for more detailed Analysis>
-
-Examples:
-
-Example 1:
-Product: Name of the product
-classification: Healthy
-reason: Contains natural ingredients, fiber, and balanced nutrients with low added sugar.
-
-Example 2:
-Product: Name of the product
-classification: Moderately Harmful
-reason: Moderate calorie density and added sugar but not excessively processed.
-
-Example 3:
-Product: Name of the product
-classification: Harmful
-reason: Very high sugar and calories with ultra-processed ingredients and additives.
+5. If the image contains packaged food products add one more sentence:
+Scan Barcode of this product for more detailed Analysis
 
 Only output the response in the specified format.`;
 // ─────────────────────────────────────────────
 
+
+/**
+ * Try Gemini models with fallback
+ */
+async function generateWithFallback(genAI, models, content) {
+  for (const modelName of models) {
+    try {
+      console.log(`⚡ Trying model: ${modelName}`);
+
+      const model = genAI.getGenerativeModel({ model: modelName });
+
+      const result = await model.generateContent(content);
+      const response = await result.response;
+
+      return response.text();
+    } catch (err) {
+      console.warn(`Model failed: ${modelName}`);
+
+      // If last model also fails → throw error
+      if (modelName === models[models.length - 1]) {
+        throw err;
+      }
+    }
+  }
+}
+
+
 /**
  * POST /api/analyze-food
- * Accepts a food image, sends it to Gemini, returns AI analysis.
  */
 export const analyzeFoodWithGemini = async (req, res) => {
   try {
@@ -69,16 +77,17 @@ export const analyzeFoodWithGemini = async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not configured in environment" });
+      return res.status(500).json({
+        error: "GEMINI_API_KEY is not configured in environment",
+      });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
 
     const imageBase64 = req.file.buffer.toString("base64");
     const mimeType = req.file.mimetype;
 
-    const result = await model.generateContent([
+    const content = [
       {
         inlineData: {
           data: imageBase64,
@@ -86,14 +95,24 @@ export const analyzeFoodWithGemini = async (req, res) => {
         },
       },
       FOOD_ANALYSIS_PROMPT,
-    ]);
+    ];
 
-    const response = await result.response;
-    const analysis = response.text();
+    // 🔹 Model priority order
+    const models = [
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+      "gemini-3-flash-preview",
+      "gemini-3.1-flash-lite-preview"
+    ];
+
+    const analysis = await generateWithFallback(genAI, models, content);
 
     return res.json({ analysis });
+
   } catch (error) {
-    console.error("❌ Gemini analysis error:", error);
-    return res.status(500).json({ error: "Failed to analyze image with Gemini" });
+    console.error("Gemini analysis error:", error);
+    return res.status(500).json({
+      error: "Failed to analyze image with Gemini",
+    });
   }
 };
