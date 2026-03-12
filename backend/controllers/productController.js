@@ -90,6 +90,10 @@ const generateLabels = (f) => {
 
 
 const saveToCSV = (features, labels) => {
+  if (process.env.VERCEL) {
+    console.log("Skipping CSV write on Vercel read-only filesystem.");
+    return;
+  }
   try {
     ensureCSVHeader();
 
