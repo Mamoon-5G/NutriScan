@@ -38,11 +38,11 @@ app.use("/api/product", productRoutes);
 app.use("/api/analyze-food", geminiRoutes);
 
 // Health check endpoint
-app.get("/", (req, res) => res.send("🌍 EcoScan API Running"));
+app.get("/", (req, res) => res.send("EcoScan API Running"));
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-  console.error("❌ Server Error:", error);
+  console.error("Server Error:", error);
 
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
@@ -63,7 +63,7 @@ const PORT = process.env.PORT || 3001;
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
-    console.log(`✅ EcoScan API running on http://localhost:${PORT}`);
+    console.log(`EcoScan API running on http://localhost:${PORT}`);
   });
 }
 

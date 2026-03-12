@@ -17,13 +17,13 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
       return res.status(400).json({ error: "No image file uploaded" });
     }
 
-    console.log("📁 Processing image from memory buffer");
+    console.log("Processing image from memory buffer");
 
-    // 🧠 Step 1: Try to decode barcode from image using OCR (more reliable for server-side)
+    // Step 1: Try to decode barcode from image using OCR (more reliable for server-side)
     let barcode = null;
 
     try {
-      console.log("🔍 Attempting barcode detection via OCR...");
+      console.log("Attempting barcode detection via OCR...");
 
       // Use Tesseract.js for both OCR and barcode detection, passing the memory buffer
       const { data: { text } } = await Tesseract.recognize(req.file.buffer, "eng", {
@@ -34,7 +34,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
         }
       });
 
-      console.log("📝 OCR Raw text:", text);
+      console.log("OCR Raw text:", text);
 
       // Look for barcode-like patterns in OCR text (8-13 digits)
       const barcodePatterns = [
@@ -48,7 +48,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
         const matches = text.match(pattern);
         if (matches && matches.length > 0) {
           barcode = matches[0];
-          console.log("✅ Barcode found via OCR:", barcode);
+          console.log("Barcode found via OCR:", barcode);
           break;
         }
       }
@@ -61,18 +61,18 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
           const potentialBarcodes = allDigits.filter(num => num.length >= 8 && num.length <= 13);
           if (potentialBarcodes.length > 0) {
             barcode = potentialBarcodes[0];
-            console.log("✅ Potential barcode found:", barcode);
+            console.log("Potential barcode found:", barcode);
           }
         }
       }
 
     } catch (err) {
-      console.warn("⚠️ OCR barcode detection failed:", err.message);
+      console.warn("OCR barcode detection failed:", err.message);
     }
 
 
 
-    // 🧠 Step 4: Return result
+    // Step 4: Return result
     if (barcode) {
       res.json({
         success: true,
@@ -88,7 +88,7 @@ export const uploadAndAnalyzeProduct = async (req, res) => {
     }
 
   } catch (error) {
-    console.error("❌ Upload processing failed:", error);
+    console.error("Upload processing failed:", error);
 
 
 
