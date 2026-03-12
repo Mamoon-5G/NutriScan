@@ -35,6 +35,9 @@ reason: <brief explanation of the nutritional concern or benefit>
 
 4. Keep the explanation short (1-2 sentences).
 
+5. If the Scanned product is a packaged product in the end just add one more sentence
+<Scan barcode for detailed analysis>
+
 Examples:
 
 Example 1:
@@ -71,7 +74,7 @@ export const analyzeFoodWithGemini = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const imageBase64 = req.file.buffer.toString("base64");
     const mimeType = req.file.mimetype;
