@@ -33,14 +33,15 @@ reason: <brief explanation of the nutritional concern or benefit>
 - natural ingredients
 
 4. Keep the explanation short (1-2 sentences).
-5. If the image contains packaged food products add one more sentence:
-Scan Barcode of this product for more detailed Analysis
+5. Suggest any alternate product for that product
+6. If the image contains packaged food products that might have barcode with them add one more sentence:
+"Scan Barcode of this product for more detailed Analysis"
 
 Only output the response in the specified format.`;
 // ─────────────────────────────────────────────
 
-const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://integrate.api.nvidia.com/v1";
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "deepseek-ai/deepseek-v3.2";
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL
+const OPENAI_MODEL = process.env.OPENAI_MODEL
 
 /**
  * POST /api/analyze-food
@@ -71,6 +72,11 @@ export const analyzeFoodWithLLM = async (req, res) => {
       model: OPENAI_MODEL,
       messages: [
         {
+          role: "system",
+          content:
+            "You analyze food images and follow the requested output format exactly. Do not invent details if image quality is low.",
+        },
+        {
           role: "user",
           content: [
             { type: "text", text: FOOD_ANALYSIS_PROMPT },
@@ -78,9 +84,9 @@ export const analyzeFoodWithLLM = async (req, res) => {
           ],
         },
       ],
-      temperature: 1,
-      top_p: 0.95,
-      max_tokens: 1024,
+      temperature: 0.6,
+      top_p: 1,
+      max_tokens: 16384,
     });
 
     const analysis = completion.choices?.[0]?.message?.content?.trim();
@@ -90,9 +96,21 @@ export const analyzeFoodWithLLM = async (req, res) => {
 
     return res.json({ analysis });
   } catch (error) {
-    console.error("LLM analysis error:", error);
-    return res.status(500).json({
-      error: "Failed to analyze image with LLM",
+    const providerMessage =
+      error?.error?.message ||
+      error?.response?.data?.error?.message ||
+      error?.message ||
+      "Failed to analyze image with LLM";
+    const providerStatus = error?.status || error?.response?.status || 500;
+
+    console.error("LLM analysis error:", {
+      status: providerStatus,
+      message: providerMessage,
+      model: OPENAI_MODEL,
+    });
+
+    return res.status(providerStatus >= 400 && providerStatus < 600 ? providerStatus : 500).json({
+      error: providerMessage,
     });
   }
 };
