@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { GeminiCameraModal } from "@/components/GeminiCameraModal";
+import { LLMCameraModal } from "@/components/LLMCameraModal";
 
 interface UploadFormProps {
   onBarcodeDetected: (barcode: string) => void;
@@ -19,7 +19,7 @@ interface UploadFormProps {
 export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: UploadFormProps) => {
   const [manualBarcode, setManualBarcode] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [geminiModalOpen, setGeminiModalOpen] = useState(false);
+  const [llmModalOpen, setLlmModalOpen] = useState(false);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -135,7 +135,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
               </Button>
               <Button
                 type="button"
-                onClick={() => setGeminiModalOpen(true)}
+                onClick={() => setLlmModalOpen(true)}
                 className="flex-1 sm:flex-none flex items-center gap-2 text-sm px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-soft font-semibold hover:from-purple-600 hover:to-pink-600 w-full sm:w-auto"
               >
                  <AiOutlineRobot className="h-4 w-4" />
@@ -229,9 +229,9 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
       </CardContent>
     </Card>
 
-    <GeminiCameraModal
-      open={geminiModalOpen}
-      onClose={() => setGeminiModalOpen(false)}
+    <LLMCameraModal
+      open={llmModalOpen}
+      onClose={() => setLlmModalOpen(false)}
     />
     </>
   );

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
-interface GeminiCameraModalProps {
+interface LLMCameraModalProps {
   open: boolean;
   onClose: () => void;
 }
@@ -30,7 +30,7 @@ const parseAnalysis = (text: string) => {
   };
 };
 
-export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => {
+export const LLMCameraModal = ({ open, onClose }: LLMCameraModalProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -84,7 +84,7 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     stopCamera();
-    
+
     setStage("analyzing");
     await analyzeImage(dataUrl);
   };
@@ -206,12 +206,12 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
             <div className="space-y-4">
                {(() => {
                  const { product, classification, reason } = parseAnalysis(analysisResult);
-                 
+
                  let bgColor = "bg-muted/30";
                  let borderColor = "border-border";
                  let textColor = "text-foreground";
                  let icon = <Zap className="h-6 w-6 text-primary" />;
-                 
+
                  const clsLower = classification.toLowerCase();
                  if (clsLower.includes("healthy")) {
                    bgColor = "bg-green-500/10";
@@ -229,7 +229,7 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
                    textColor = "text-red-600 dark:text-red-400";
                    icon = <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center"><AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" /></div>;
                  }
-                 
+
                  return (
                    <div className={`rounded-xl border ${borderColor} ${bgColor} p-6 flex flex-col items-center text-center space-y-4 transition-all duration-500 animate-in fade-in zoom-in-95`}>
                       {icon}
@@ -245,7 +245,7 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
                    </div>
                  );
                })()}
-               
+
               <Button onClick={retake} className="w-full gradient-primary shadow-soft font-semibold text-white hover:opacity-90 transition-opacity">
                 <Camera className="h-4 w-4 mr-2" />
                 {analysisResult.toLowerCase().includes("invalid") ? "Try Again" : "Analyze Another Food"}
