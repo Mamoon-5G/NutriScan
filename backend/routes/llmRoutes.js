@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { analyzeFoodWithGemini } from "../controllers/geminiController.js";
+import { analyzeFoodWithLLM } from "../controllers/llmController.js";
 
 const router = express.Router();
 
@@ -23,9 +23,9 @@ const upload = multer({
 /**
  * POST /api/analyze-food
  * - Accepts a food image
- * - Sends to Gemini LLM for analysis
+ * - Sends to LLM for analysis
  * - Returns analysis text
  */
-router.post("/", upload.single("image"), analyzeFoodWithGemini);
+router.post("/", upload.single("image"), analyzeFoodWithLLM);
 
 export default router;

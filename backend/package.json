@@ -9,12 +9,12 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@zxing/library": "^0.21.3",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "multer": "^2.0.2",
+    "openai": "^4.104.0",
     "tesseract.js": "^6.0.1"
   },
   "devDependencies": {

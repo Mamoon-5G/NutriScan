@@ -1,9 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 // ─────────────────────────────────────────────
 const FOOD_ANALYSIS_PROMPT = `You are a nutrition analysis assistant.
 
-Your task is to analyze an image and determine whether the item shown is a food product. 
+Your task is to analyze an image and determine whether the item shown is a food product.
 If it is a food product, classify its health impact.
 
 Classification categories:
@@ -39,80 +39,60 @@ Scan Barcode of this product for more detailed Analysis
 Only output the response in the specified format.`;
 // ─────────────────────────────────────────────
 
-
-/**
- * Try Gemini models with fallback
- */
-async function generateWithFallback(genAI, models, content) {
-  for (const modelName of models) {
-    try {
-      console.log(`⚡ Trying model: ${modelName}`);
-
-      const model = genAI.getGenerativeModel({ model: modelName });
-
-      const result = await model.generateContent(content);
-      const response = await result.response;
-
-      return response.text();
-    } catch (err) {
-      console.warn(`Model failed: ${modelName}`);
-
-      // If last model also fails → throw error
-      if (modelName === models[models.length - 1]) {
-        throw err;
-      }
-    }
-  }
-}
-
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://integrate.api.nvidia.com/v1";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "deepseek-ai/deepseek-v3.2";
 
 /**
  * POST /api/analyze-food
  */
-export const analyzeFoodWithGemini = async (req, res) => {
+export const analyzeFoodWithLLM = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({
-        error: "GEMINI_API_KEY is not configured in environment",
+        error: "OPENAI_API_KEY is not configured in environment",
       });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const openai = new OpenAI({
+      apiKey,
+      baseURL: OPENAI_BASE_URL,
+    });
 
     const imageBase64 = req.file.buffer.toString("base64");
     const mimeType = req.file.mimetype;
+    const imageDataUrl = `data:${mimeType};base64,${imageBase64}`;
 
-    const content = [
-      {
-        inlineData: {
-          data: imageBase64,
-          mimeType: mimeType,
+    const completion = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: FOOD_ANALYSIS_PROMPT },
+            { type: "image_url", image_url: { url: imageDataUrl } },
+          ],
         },
-      },
-      FOOD_ANALYSIS_PROMPT,
-    ];
+      ],
+      temperature: 1,
+      top_p: 0.95,
+      max_tokens: 1024,
+    });
 
-    // 🔹 Model priority order
-    const models = [
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-lite",
-      "gemini-3-flash-preview",
-      "gemini-3.1-flash-lite-preview"
-    ];
-
-    const analysis = await generateWithFallback(genAI, models, content);
+    const analysis = completion.choices?.[0]?.message?.content?.trim();
+    if (!analysis) {
+      throw new Error("No analysis text returned by LLM");
+    }
 
     return res.json({ analysis });
-
   } catch (error) {
-    console.error("Gemini analysis error:", error);
+    console.error("LLM analysis error:", error);
     return res.status(500).json({
-      error: "Failed to analyze image with Gemini",
+      error: "Failed to analyze image with LLM",
     });
   }
 };
