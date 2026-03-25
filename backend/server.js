@@ -19,7 +19,8 @@ app.use(cors({
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://nutri-scanner-one.vercel.app"
+    "https://nutri-scanner-one.vercel.app",
+    "https://nutri-scan-nine-omega.vercel.app"
   ],
   credentials: true
 }));

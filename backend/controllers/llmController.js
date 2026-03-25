@@ -37,6 +37,8 @@ reason: <brief explanation of the nutritional concern or benefit>
 5. If the image is a packaged product that may have barcode attached with them in the end just add one more sentence
 <Scan barcode for detailed analysis>
 
+6. Recommend the proper alternate product with name
+
 Examples:
 
 Example 1:
@@ -48,11 +50,13 @@ Example 2:
 Product: Name of the product
 classification: Moderately Harmful
 reason: Moderate calorie density and added sugar but not excessively processed.
+Recommendation: Go for <Product Names> instead
 
 Example 3:
 Product: Name of the product
 classification: Very Harmful
 reason: Very high sugar and calories with ultra-processed ingredients and additives.
+Recommendation: Go for <Product Names> instead
 
 Example 4:
 Product: Name of the product
