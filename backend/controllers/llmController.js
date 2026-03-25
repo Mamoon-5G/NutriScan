@@ -3,17 +3,17 @@ import OpenAI from "openai";
 // ─────────────────────────────────────────────
 const FOOD_ANALYSIS_PROMPT = `You are a nutrition analysis assistant.
 
-Your task is to analyze an image and determine whether the item shown is a food product.
+Your task is to analyze an image and determine whether the item shown is a food product. 
 If it is a food product, classify its health impact.
 
 Classification categories:
 - Healthy
 - Moderately Harmful
-- Harmful
+- Very Harmful
 
 Rules:
 1. If the image does NOT contain a food or edible product, respond only with:
-The captured image is not a food product.
+The captured image is not a food product (or any better sentence)
 
 2. If the image contains food, respond in the following format exactly:
 
@@ -33,9 +33,31 @@ reason: <brief explanation of the nutritional concern or benefit>
 - natural ingredients
 
 4. Keep the explanation short (1-2 sentences).
-5. Suggest any alternate product for that product
-6. If the image contains packaged food products that might have barcode with them add one more sentence:
-"Scan Barcode of this product for more detailed Analysis"
+
+5. If the image is a packaged product that may have barcode attached with them in the end just add one more sentence
+<Scan barcode for detailed analysis>
+
+Examples:
+
+Example 1:
+Product: Name of the product
+classification: Healthy
+reason: Contains natural ingredients, fiber, and balanced nutrients with low added sugar.
+
+Example 2:
+Product: Name of the product
+classification: Moderately Harmful
+reason: Moderate calorie density and added sugar but not excessively processed.
+
+Example 3:
+Product: Name of the product
+classification: Very Harmful
+reason: Very high sugar and calories with ultra-processed ingredients and additives.
+
+Example 4:
+Product: Name of the product
+classification: Very Harmful
+reason: Very high sugar and calories with ultra-processed ingredients and additives. Scan the barcode for more detailed analysis
 
 Only output the response in the specified format.`;
 // ─────────────────────────────────────────────
@@ -84,9 +106,9 @@ export const analyzeFoodWithLLM = async (req, res) => {
           ],
         },
       ],
-      temperature: 0.6,
+      temperature: 0.15,
       top_p: 1,
-      max_tokens: 16384,
+      max_tokens: 2048,
     });
 
     const analysis = completion.choices?.[0]?.message?.content?.trim();
