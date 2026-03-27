@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 // ─────────────────────────────────────────────
-const FOOD_ANALYSIS_PROMPT = `You are a nutrition analysis assistant.
+const FOOD_ANALYSIS_PROMPT = `You are a nutrition analysis expert.
 
 Your task is to analyze an image and determine whether the item shown is a food product. 
 If it is a food product, classify its health impact.
@@ -66,8 +66,17 @@ reason: Very high sugar and calories with ultra-processed ingredients and additi
 Only output the response in the specified format.`;
 // ─────────────────────────────────────────────
 
-const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL
-const OPENAI_MODEL = process.env.OPENAI_MODEL
+const normalizeProviderUrl = (rawUrl) => {
+  if (!rawUrl) return undefined;
+
+  // Some providers share a full chat completion URL in env;
+  // OpenAI SDK expects only the API base URL.
+  return rawUrl.replace(/\/chat\/completions\/?$/i, "");
+};
+
+const LLM_API_KEY = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+const LLM_BASE_URL = normalizeProviderUrl(process.env.OPENROUTER_URL || process.env.OPENAI_BASE_URL);
+const LLM_MODEL = process.env.OPENROUTER_MODEL || process.env.OPENAI_MODEL;
 
 /**
  * POST /api/analyze-food
@@ -78,16 +87,21 @@ export const analyzeFoodWithLLM = async (req, res) => {
       return res.status(400).json({ error: "No image file provided" });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    if (!LLM_API_KEY) {
       return res.status(500).json({
-        error: "OPENAI_API_KEY is not configured in environment",
+        error: "No LLM API key configured. Set OPENROUTER_API_KEY (or OPENAI_API_KEY).",
+      });
+    }
+
+    if (!LLM_MODEL) {
+      return res.status(500).json({
+        error: "No LLM model configured. Set OPENROUTER_MODEL (or OPENAI_MODEL).",
       });
     }
 
     const openai = new OpenAI({
-      apiKey,
-      baseURL: OPENAI_BASE_URL,
+      apiKey: LLM_API_KEY,
+      baseURL: LLM_BASE_URL,
     });
 
     const imageBase64 = req.file.buffer.toString("base64");
@@ -95,7 +109,7 @@ export const analyzeFoodWithLLM = async (req, res) => {
     const imageDataUrl = `data:${mimeType};base64,${imageBase64}`;
 
     const completion = await openai.chat.completions.create({
-      model: OPENAI_MODEL,
+      model: LLM_MODEL,
       messages: [
         {
           role: "system",
@@ -132,7 +146,8 @@ export const analyzeFoodWithLLM = async (req, res) => {
     console.error("LLM analysis error:", {
       status: providerStatus,
       message: providerMessage,
-      model: OPENAI_MODEL,
+      model: LLM_MODEL,
+      baseURL: LLM_BASE_URL,
     });
 
     return res.status(providerStatus >= 400 && providerStatus < 600 ? providerStatus : 500).json({
