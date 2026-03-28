@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,10 +12,7 @@ async function fetchAndPopulateAdditives() {
     console.log('Fetching additives from OpenFoodFacts...');
 
     try {
-        const response = await fetch(ADDITIVES_URL);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const rawData = await response.json();
+        const { data: rawData } = await axios.get(ADDITIVES_URL);
         console.log(`Successfully fetched taxonomy. Parsing ${Object.keys(rawData).length} entries...`);
 
         // We only want actual base additives (e.g. en:e100), not sub-variants or categories if possible

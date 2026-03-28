@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Upload, Hash, Loader2 } from "lucide-react";
+import axios from "axios";
 import { FiCamera } from "react-icons/fi";
 import { AiOutlineRobot } from "react-icons/ai";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ interface UploadFormProps {
 }
 
 export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: UploadFormProps) => {
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
   const [manualBarcode, setManualBarcode] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
@@ -64,18 +66,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
     formData.append("image", file);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/upload`,
-        {
-          method: "POST",
-          body: formData,
-        });
-
-      if (!response.ok) {
-        throw new Error("Failed to detect barcode from image");
-      }
-
-      const data = await response.json();
+      const { data } = await axios.post(`${apiBaseUrl}/api/upload`, formData);
 
       if (data.barcode) {
         toast.success("Barcode detected successfully!");

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Leaf, Loader2 } from "lucide-react";
+import axios from "axios";
 import { UploadForm } from "@/components/UploadForm";
 import { ProductCard } from "@/components/ProductCard";
 import { AnalysisCard } from "@/components/AnalysisCard";
@@ -36,6 +37,7 @@ interface ProductData {
 }
 
 const Index = () => {
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [analysisData, setAnalysisData] = useState<string>("");
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
@@ -48,15 +50,7 @@ const Index = () => {
     setIsLoadingProduct(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/product/${barcode}`
-      );
-
-      if (!response.ok) {
-        throw new Error("Product not found");
-      }
-
-      const data = await response.json();
+      const { data } = await axios.get(`${apiBaseUrl}/api/product/${barcode}`);
       setProductData(data);
       await analyzeProduct(data);
 
@@ -76,21 +70,7 @@ const Index = () => {
     setIsLoadingAnalysis(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/product/analyze`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ product }),
-        });
-
-      if (!response.ok) {
-        throw new Error("Analysis failed");
-      }
-
-      const data = await response.json();
+      const { data } = await axios.post(`${apiBaseUrl}/api/product/analyze`, { product });
       setAnalysisData(data.analysis || data.summary || "Analysis completed successfully.");
       toast.success("Analysis completed!");
     } catch (error) {

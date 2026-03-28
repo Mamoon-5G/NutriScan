@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +10,18 @@ interface GeminiCameraModalProps {
 }
 
 type Stage = "camera" | "analyzing" | "result";
+
+const dataUrlToBlob = (dataUrl: string): Blob => {
+  const [meta, base64] = dataUrl.split(",");
+  const mimeMatch = meta?.match(/data:(.*);base64/);
+  const mime = mimeMatch?.[1] || "image/jpeg";
+  const binary = atob(base64 || "");
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+};
 
 const parseAnalysis = (text: string) => {
   if (text.trim().toLowerCase() === "invalid") {
@@ -31,6 +44,7 @@ const parseAnalysis = (text: string) => {
 };
 
 export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => {
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -97,26 +111,19 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
 
   const analyzeImage = async (imageDataUrl: string) => {
     try {
-      const fetchRes = await fetch(imageDataUrl);
-      const blob = await fetchRes.blob();
+      const blob = dataUrlToBlob(imageDataUrl);
       const formData = new FormData();
       formData.append("image", blob, "food-capture.jpg");
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/analyze-food`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error((errData as { error?: string }).error || "Analysis failed");
-      }
-
-      const data = await res.json();
+      const { data } = await axios.post(`${apiBaseUrl}/api/analyze-food`, formData);
       setAnalysisResult(data.analysis);
       setStage("result");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to analyze image";
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string } | undefined)?.error || err.message
+        : err instanceof Error
+          ? err.message
+          : "Failed to analyze image";
       toast.error(message);
       setStage("camera");
       startCamera();
