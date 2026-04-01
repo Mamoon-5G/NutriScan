@@ -26,47 +26,15 @@ export interface RecommendationListProps {
 }
 
 /**
- * Default mock recommendations for demonstration
- */
-export const DEFAULT_RECOMMENDATIONS: ProductRecommendation[] = [
-  {
-    name: "Organic Fresh Fruit Bowl",
-    brand: "FreshFarm",
-    reason: "No added sugar, organic ingredients, eco-friendly packaging",
-    rating: 4.8,
-    eco_friendly: true,
-    price: "$8.99"
-  },
-  {
-    name: "Natural Vegetable Snacks",
-    brand: "Nature's Best",
-    reason: "Low sodium, no preservatives, whole food ingredients",
-    rating: 4.6,
-    eco_friendly: true,
-    price: "$6.99"
-  },
-  {
-    name: "Whole Grain Crackers",
-    brand: "Healthy Life",
-    reason: "High fiber, no artificial additives, sustainable sourcing",
-    rating: 4.5,
-    eco_friendly: true,
-    price: "$5.49"
-  }
-];
-
-/**
  * Single recommendation card
  */
 const RecommendationCard = ({ recommendation }: { recommendation: ProductRecommendation }) => {
-  const [expanded, setExpanded] = useState(false);
-
   return (
     <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Product Image */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="h-24 w-24 rounded-lg bg-muted/50 flex items-center justify-center overflow-hidden">
               {recommendation.image_url ? (
                 <img
@@ -124,7 +92,7 @@ const RecommendationCard = ({ recommendation }: { recommendation: ProductRecomme
  */
 export const RecommendationList = ({
   title = "Healthier Alternatives",
-  recommendations = DEFAULT_RECOMMENDATIONS,
+  recommendations = [],
   className = ""
 }: RecommendationListProps) => {
   const [showAll, setShowAll] = useState(false);

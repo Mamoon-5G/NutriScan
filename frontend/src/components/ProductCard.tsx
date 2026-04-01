@@ -1,8 +1,8 @@
-import { Package, Award, Leaf, AlertTriangle, ChevronDown, AlertCircle, CheckCircle } from "lucide-react";
+import { Package, Award, Leaf, AlertTriangle, ChevronDown, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { ImpactBadge, getImpactColorClass, parseEnvironmentalImpact } from "./ImpactBadge";
+import { ImpactBadge, parseEnvironmentalImpact } from "./ImpactBadge";
 import { RecommendationList } from "./RecommendationList";
 import type { ProductRecommendation } from "./RecommendationList";
 
@@ -92,6 +92,31 @@ const getRiskLevelColor = (riskLevel: string | undefined) => {
   return "text-muted-foreground";
 };
 
+interface LLMRecommendationResponse {
+  recommendations?: ProductRecommendation[];
+  error?: string;
+}
+
+const normalizeRecommendation = (candidate: unknown): ProductRecommendation | null => {
+  if (!candidate || typeof candidate !== "object") return null;
+
+  const item = candidate as Record<string, unknown>;
+  const name = typeof item.name === "string" ? item.name.trim() : "";
+  if (!name) return null;
+
+  return {
+    name,
+    brand: typeof item.brand === "string" && item.brand.trim().length > 0 ? item.brand.trim() : undefined,
+    image_url: typeof item.image_url === "string" && item.image_url.trim().length > 0 ? item.image_url.trim() : undefined,
+    reason: typeof item.reason === "string" && item.reason.trim().length > 0
+      ? item.reason.trim()
+      : "Suggested by the LLM as a healthier alternative.",
+    rating: typeof item.rating === "number" && Number.isFinite(item.rating) ? item.rating : undefined,
+    eco_friendly: typeof item.eco_friendly === "boolean" ? item.eco_friendly : undefined,
+    price: typeof item.price === "string" && item.price.trim().length > 0 ? item.price.trim() : undefined,
+  };
+};
+
 /**
  * Check if product needs recommendations (Moderately or Highly harmful)
  */
@@ -100,117 +125,28 @@ const needsRecommendations = (product: ProductData): boolean => {
   const healthScore = product.unified_score?.health_score;
   const ecoScore = product.unified_score?.overall_eco_score;
 
-  // Check if environmental impact is Moderate or High
   if (impactLevel === "Moderate" || impactLevel === "High") {
     return true;
   }
 
-  // Check if health score is Moderate or High
   if (healthScore === "Moderate" || healthScore === "High") {
     return true;
   }
 
-  // Check if eco score is Moderate or High (C or worse)
   if (ecoScore === "Moderate" || ecoScore === "High") {
     return true;
   }
 
-  // Check rule-based health label
   if (product.rule_based_health_label === 1 || product.rule_based_health_label === 2) {
     return true;
   }
 
-  // Check ML health label
   const mlLabel = typeof product.ml_health_label === "string" ? parseInt(product.ml_health_label) : product.ml_health_label;
   if (mlLabel === 1 || mlLabel === 2) {
     return true;
   }
 
   return false;
-};
-
-/**
- * Generate alternative product recommendations based on product type
- */
-const generateRecommendations = (product: ProductData): ProductRecommendation[] => {
-  const productName = product.product_name?.toLowerCase() || "";
-  const grade = product.nutrition_grade?.toUpperCase() || "";
-
-  // Default healthy alternatives
-  const baseRecommendations: ProductRecommendation[] = [
-    {
-      name: "Organic Whole Foods",
-      brand: "Nature's Best",
-      reason: "No added sugars, eco-friendly packaging, whole food ingredients",
-      rating: 4.8,
-      eco_friendly: true,
-      price: "$12.99"
-    },
-    {
-      name: "Fresh Seasonal Produce",
-      brand: "Farm Direct",
-      reason: "Locally sourced, low carbon footprint, no preservatives",
-      rating: 4.7,
-      eco_friendly: true,
-      price: "$8.99"
-    }
-  ];
-
-  // Specialized recommendations based on product type
-  if (productName.includes("sugar") || productName.includes("sweet")) {
-    return [
-      ...baseRecommendations,
-      {
-        name: "Natural Fruit Snacks",
-        brand: "Healthy Choices",
-        reason: "No added sugar, rich in fiber, natural sweetness",
-        rating: 4.6,
-        eco_friendly: true,
-        price: "$6.99"
-      }
-    ];
-  }
-
-  if (productName.includes("plastic") || productName.includes("packaged")) {
-    return [
-      ...baseRecommendations,
-      {
-        name: "Bulk Fresh Products",
-        brand: "Eco Marketplace",
-        reason: "Zero plastic packaging, sustainable sourcing",
-        rating: 4.5,
-        eco_friendly: true,
-        price: "$10.99"
-      }
-    ];
-  }
-
-  if (grade === "D" || grade === "E") {
-    return [
-      ...baseRecommendations,
-      {
-        name: "Premium Organic Option",
-        brand: "Top Quality",
-        reason: "Highest quality ingredients, certified organic",
-        rating: 4.9,
-        eco_friendly: true,
-        price: "$15.99"
-      }
-    ];
-  }
-
-  // Generic recommendations
-  return [
-    ...baseRecommendations,
-    {
-      name: "Eco-Friendly Alternative",
-      brand: "Green Products",
-      reason: "Sustainably sourced, biodegradable packaging",
-      rating: 4.6,
-      eco_friendly: true,
-      price: "$9.99"
-    }
-  ];
 };
 
 /**
@@ -263,7 +199,7 @@ const IngredientExpandable = ({ ingredient }: { ingredient: IngredientDetail }) 
             <ul className="space-y-1">
               {ingredient.health_effects.map((effect, idx) => (
                 <li key={idx} className="text-sm text-foreground flex gap-2">
-                  <span className="text-destructive flex-shrink-0">•</span>
+                  <span className="text-destructive shrink-0">•</span>
                   <span>{effect}</span>
                 </li>
               ))}
@@ -302,7 +238,7 @@ const ProductInfoSummary = ({ product }: { product: ProductData }) => {
       {/* Product Image and Basic Info */}
       <div className="flex flex-col sm:flex-row gap-4">
         {product.image_url && (
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <img
               src={product.image_url}
               alt={product.product_name || "Product"}
@@ -429,7 +365,81 @@ const HarmfulIngredientsSection = ({ product }: { product: ProductData }) => {
  * Recommendation Section (shown for harmful products)
  */
 const RecommendationSection = ({ product }: { product: ProductData }) => {
-  const recommendations = generateRecommendations(product);
+  const [recommendations, setRecommendations] = useState<ProductRecommendation[]>([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
+  const [recommendationMessage, setRecommendationMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRecommendations = async () => {
+      if (!needsRecommendations(product)) {
+        setRecommendations([]);
+        setRecommendationMessage(null);
+        setIsLoadingRecommendations(false);
+        return;
+      }
+
+      if (!product.product_name?.trim()) {
+        setRecommendations([]);
+        setRecommendationMessage("No product name available for alternative lookup.");
+        setIsLoadingRecommendations(false);
+        return;
+      }
+
+      const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+      setIsLoadingRecommendations(true);
+      setRecommendationMessage(null);
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/analyze-food/recommendations`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ product }),
+        });
+
+        const data = (await response.json().catch(() => ({}))) as LLMRecommendationResponse;
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to generate LLM recommendations");
+        }
+
+        const rankedRecommendations = Array.isArray(data.recommendations)
+          ? data.recommendations
+              .map((candidate) => normalizeRecommendation(candidate))
+              .filter((item): item is ProductRecommendation => Boolean(item))
+              .slice(0, 6)
+          : [];
+
+        if (!cancelled) {
+          setRecommendations(rankedRecommendations);
+          setRecommendationMessage(
+            rankedRecommendations.length === 0
+              ? "The LLM could not infer strong alternatives from the current product data."
+              : null
+          );
+        }
+      } catch (error) {
+        console.error("Error loading LLM recommendations:", error);
+        if (!cancelled) {
+          setRecommendations([]);
+          setRecommendationMessage(error instanceof Error ? error.message : "Unable to load alternatives right now.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingRecommendations(false);
+        }
+      }
+    };
+
+    loadRecommendations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [product]);
 
   if (!needsRecommendations(product)) {
     return null;
@@ -439,15 +449,27 @@ const RecommendationSection = ({ product }: { product: ProductData }) => {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Leaf className="h-5 w-5 text-green-600" />
-        <span className="font-semibold text-green-700">Recommended Alternatives</span>
+        <span className="font-semibold text-green-700">LLM Recommended Alternatives</span>
       </div>
       <p className="text-sm text-muted-foreground">
-        Based on the analysis, consider these healthier and more eco-friendly options.
+        Alternatives generated by the LLM from the product nutrition and ingredient data.
       </p>
-      <RecommendationList
-        recommendations={recommendations}
-        className="border-green-200/30"
-      />
+      {isLoadingRecommendations ? (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 flex items-center gap-3">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Generating alternatives...</p>
+        </div>
+      ) : recommendations.length > 0 ? (
+        <RecommendationList
+          recommendations={recommendations}
+          title="LLM Recommended Alternatives"
+          className="border-green-200/30"
+        />
+      ) : (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+          {recommendationMessage || "No comparable alternatives found right now."}
+        </div>
+      )}
     </div>
   );
 };
