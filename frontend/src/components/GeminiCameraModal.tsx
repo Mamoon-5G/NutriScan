@@ -144,12 +144,12 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
-      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
+      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden max-h-[94dvh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">AI Food Analyzer</h2>
+            <h2 className="text-base sm:text-lg font-semibold">AI Food Analyzer</h2>
           </div>
           <Button variant="ghost" size="sm" onClick={handleClose} className="h-8 w-8 p-0 rounded-full">
             <X className="h-4 w-4" />
@@ -157,23 +157,23 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
         </div>
 
         {/* Body */}
-        <div className="p-3 sm:p-5 space-y-4">
+        <div className="p-3 sm:p-5 space-y-4 overflow-y-auto max-h-[calc(94dvh-4rem)]">
           {stage === "camera" && (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground text-center">
                 Point camera at a food item and capture a photo for AI analysis
               </p>
               {cameraError ? (
-                <div className="flex flex-col items-center justify-center min-h-[320px] sm:min-h-[400px] rounded-xl bg-muted/50 gap-3 border border-dashed border-border">
+                <div className="flex flex-col items-center justify-center h-[min(52dvh,420px)] rounded-xl bg-muted/50 gap-3 border border-dashed border-border">
                   <AlertCircle className="h-10 w-10 text-destructive" />
                   <p className="text-sm text-muted-foreground text-center px-4">{cameraError}</p>
-                  <Button variant="outline" size="sm" onClick={startCamera}>
+                  <Button variant="outline" size="sm" onClick={startCamera} className="min-h-11 px-4">
                     <Camera className="h-4 w-4 mr-2" />
                     Retry Camera
                   </Button>
                 </div>
               ) : (
-                <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] min-h-[320px] sm:min-h-[400px] flex items-center justify-center">
+                <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] h-[min(52dvh,420px)] sm:h-[min(56dvh,520px)] flex items-center justify-center">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -189,7 +189,7 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
               {!cameraError && (
                 <Button
                   onClick={capturePhoto}
-                  className="w-full gradient-primary shadow-soft font-semibold"
+                  className="w-full gradient-primary shadow-soft font-semibold min-h-11"
                 >
                   <Camera className="h-4 w-4 mr-2" />
                   Capture Photo
@@ -199,7 +199,7 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
           )}
 
           {stage === "analyzing" && (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+            <div className="flex flex-col items-center justify-center py-10 sm:py-16 space-y-4 min-h-[240px]">
               <div className="relative">
                 <div className="absolute inset-0 rounded-full blur-xl bg-primary/20 animate-pulse" />
                 <Loader2 className="h-12 w-12 text-primary animate-spin relative z-10" />
@@ -238,10 +238,10 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
                  }
                  
                  return (
-                   <div className={`rounded-xl border ${borderColor} ${bgColor} p-6 flex flex-col items-center text-center space-y-4 transition-all duration-500 animate-in fade-in zoom-in-95`}>
+                   <div className={`rounded-xl border ${borderColor} ${bgColor} p-4 sm:p-6 flex flex-col items-center text-center space-y-4 transition-all duration-500 animate-in fade-in zoom-in-95`}>
                       {icon}
                       <div>
-                        <h3 className="text-xl font-bold">{product}</h3>
+                        <h3 className="text-lg sm:text-xl font-bold break-words">{product}</h3>
                         <p className={`text-sm font-bold mt-1 uppercase tracking-wider ${textColor}`}>
                           {classification}
                         </p>
@@ -253,10 +253,15 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
                  );
                })()}
                
-              <Button onClick={retake} className="w-full gradient-primary shadow-soft font-semibold text-white hover:opacity-90 transition-opacity">
-                <Camera className="h-4 w-4 mr-2" />
-                {analysisResult.toLowerCase().includes("invalid") ? "Try Again" : "Analyze Another Food"}
-              </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button onClick={retake} className="w-full gradient-primary shadow-soft font-semibold text-white hover:opacity-90 transition-opacity min-h-11">
+                  <Camera className="h-4 w-4 mr-2" />
+                  {analysisResult.toLowerCase().includes("invalid") ? "Try Again" : "Analyze Another Food"}
+                </Button>
+                <Button onClick={handleClose} variant="outline" className="w-full min-h-11">
+                  Close
+                </Button>
+              </div>
             </div>
           )}
         </div>

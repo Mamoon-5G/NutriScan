@@ -193,3 +193,42 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-medium);
   }
 }
+
+/* Keep html5-qrcode scanner internals responsive inside modal containers. */
+#camera-reader {
+  width: 100%;
+  max-width: 100%;
+}
+
+#camera-reader video,
+#camera-reader img {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover;
+}
+
+#camera-reader__scan_region {
+  min-height: 220px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+#camera-reader__dashboard {
+  padding: 0.75rem;
+}
+
+#camera-reader__dashboard button,
+#camera-reader__dashboard select {
+  min-height: 2.75rem;
+}
+
+@media (max-width: 640px) {
+  #camera-reader__scan_region {
+    min-height: 190px;
+  }
+
+  #camera-reader__dashboard {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+}
