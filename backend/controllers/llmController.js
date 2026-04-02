@@ -66,16 +66,71 @@ Only output the response in the specified format.
 
 7. Choose exactly one classification from: Healthy, Moderately Harmful, Very Harmful.
 8. Do not include multiple classifications in one response.
-9. If food is detected, output only these lines in this exact order:
-Product: <Name>
-classification: <Healthy | Moderately Harmful | Very Harmful>
-reason: <1-2 short sentences>
-Recommendation: Go for <Product Names> instead
-10. Do not add any extra labels, notes, markdown, or explanation outside these lines.`;
+9. Do not add any extra labels, notes, markdown, or explanation outside these lines.`;
 
 
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "nvidia/nemotron-nano-12b-v2-vl:free";
+const OPENROUTER_VISION_MODEL = process.env.OPENROUTER_MODEL || "nvidia/nemotron-nano-12b-v2-vl:free";
+const OPENROUTER_TEXT_MODEL = process.env.OPENROUTER_TEXT_MODEL || OPENROUTER_VISION_MODEL;
 const OPENROUTER_BASE_URL = (process.env.OPENROUTER_URL || "https://openrouter.ai/api/v1").replace(/\/chat\/completions\/?$/, "");
+
+const RECOMMENDATION_PROMPT = `You are a product recommendation engine for a nutrition analysis app.
+
+Given the scanned product metadata, suggest 3 real-world alternative products that are healthier and/or more eco-friendly.
+
+Return strict JSON only in this exact shape:
+{
+  "recommendations": [
+    {
+      "name": "<specific product name>",
+      "brand": "<brand or manufacturer if known>",
+      "reason": "<short explanation of why it is a better alternative>",
+      "rating": 4.6,
+      "eco_friendly": true,
+      "price": "$4.99"
+    }
+  ]
+}
+
+Rules:
+1. Recommend concrete product names, not vague categories.
+2. Prefer products with lower sugar, sodium, saturated fat, fewer additives, and better environmental profile.
+3. Do not repeat the scanned product or variants of the same product.
+4. If a brand is not confidently known, leave brand empty or use an empty string.
+5. If you cannot infer a strong alternative, return an empty array.
+6. Do not include markdown, prose, or extra keys outside the JSON object.
+
+Scanned product metadata:
+`;
+
+const stripCodeFences = (value) => value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+const parseRecommendationPayload = (text) => {
+  const cleaned = stripCodeFences(text);
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("LLM did not return JSON");
+  }
+
+  const parsed = JSON.parse(cleaned.slice(start, end + 1));
+  const recommendations = Array.isArray(parsed?.recommendations) ? parsed.recommendations : [];
+
+  return {
+    recommendations: recommendations
+      .filter((item) => item && typeof item.name === "string" && item.name.trim().length > 0)
+      .map((item) => ({
+        name: item.name.trim(),
+        brand: typeof item.brand === "string" && item.brand.trim().length > 0 ? item.brand.trim() : undefined,
+        image_url: typeof item.image_url === "string" && item.image_url.trim().length > 0 ? item.image_url.trim() : undefined,
+        reason: typeof item.reason === "string" && item.reason.trim().length > 0 ? item.reason.trim() : "Suggested by the LLM as a healthier alternative.",
+        rating: typeof item.rating === "number" && Number.isFinite(item.rating) ? item.rating : undefined,
+        eco_friendly: typeof item.eco_friendly === "boolean" ? item.eco_friendly : undefined,
+        price: typeof item.price === "string" && item.price.trim().length > 0 ? item.price.trim() : undefined,
+      }))
+      .slice(0, 6),
+  };
+};
 
 export const analyzeFoodWithLLM = async (req, res) => {
   try {
@@ -99,7 +154,7 @@ export const analyzeFoodWithLLM = async (req, res) => {
     });
 
     const apiResponse = await client.chat.completions.create({
-      model: OPENROUTER_MODEL,
+      model: OPENROUTER_VISION_MODEL,
       messages: [
         {
           role: "user",
@@ -138,6 +193,71 @@ export const analyzeFoodWithLLM = async (req, res) => {
     console.error("LLM analysis error:", error);
     return res.status(500).json({
       error: "Failed to analyze image with LLM",
+    });
+  }
+};
+
+export const recommendAlternativesWithLLM = async (req, res) => {
+  try {
+    const { product } = req.body || {};
+
+    if (!product || Object.keys(product).length === 0) {
+      return res.status(400).json({ error: "Product data is required" });
+    }
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "OPENROUTER_API_KEY is not configured in environment",
+      });
+    }
+
+    const client = new OpenAI({
+      baseURL: OPENROUTER_BASE_URL,
+      apiKey,
+    });
+
+    const promptText = `${RECOMMENDATION_PROMPT}${JSON.stringify(product, null, 2)}`;
+
+    const apiResponse = await client.chat.completions.create({
+      model: OPENROUTER_TEXT_MODEL,
+      messages: [
+        {
+          role: "user",
+          content: promptText,
+        },
+      ],
+      reasoning: { enabled: true },
+      temperature: 0.7,
+      top_p: 0.95,
+      max_tokens: 1024,
+    });
+
+    const assistantMessage = apiResponse?.choices?.[0]?.message;
+    const responseText = typeof assistantMessage?.content === "string"
+      ? assistantMessage.content.trim()
+      : Array.isArray(assistantMessage?.content)
+        ? assistantMessage.content
+          .filter((item) => item?.type === "text" && typeof item?.text === "string")
+          .map((item) => item.text)
+          .join("\n")
+          .trim()
+        : "";
+
+    if (!responseText) {
+      throw new Error("No recommendation text returned by LLM");
+    }
+
+    const parsed = parseRecommendationPayload(responseText);
+
+    return res.json({
+      recommendations: parsed.recommendations,
+      reasoning_details: assistantMessage?.reasoning_details,
+    });
+  } catch (error) {
+    console.error("LLM recommendation error:", error);
+    return res.status(500).json({
+      error: "Failed to generate alternatives with LLM",
     });
   }
 };

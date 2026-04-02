@@ -141,6 +141,10 @@ const getEnvironmentalImpact = (productName) => {
 export const searchProductByName = async (req, res) => {
   try {
     const { name } = req.params;
+    const requestedLimit = Number.parseInt(req.query.limit, 10);
+    const pageSize = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 20)
+      : 10;
 
     if (!name || name.trim() === "") {
       return res.status(400).json({ error: "Product name is required" });
@@ -153,7 +157,7 @@ export const searchProductByName = async (req, res) => {
         search_simple: 1,
         action: "process",
         format: "json",
-        page_size: 5
+        page_size: pageSize
       }
     });
 
@@ -161,8 +165,8 @@ export const searchProductByName = async (req, res) => {
       return res.status(404).json({ error: "No products found matching your search" });
     }
 
-    // Return top 5 results
-    const results = response.data.products.slice(0, 5).map(product => ({
+    // Return the requested number of results
+    const results = response.data.products.slice(0, pageSize).map(product => ({
       barcode: product.barcode || product.code || "",
       product_name: product.product_name || "Unknown Product",
       brands: product.brands || "N/A",

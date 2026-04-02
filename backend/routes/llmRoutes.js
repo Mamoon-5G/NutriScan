@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { analyzeFoodWithLLM } from "../controllers/llmController.js";
+import { analyzeFoodWithLLM, recommendAlternativesWithLLM } from "../controllers/llmController.js";
 
 const router = express.Router();
 
@@ -27,5 +27,13 @@ const upload = multer({
  * - Returns analysis text
  */
 router.post("/", upload.single("image"), analyzeFoodWithLLM);
+
+/**
+ * POST /api/analyze-food/recommendations
+ * - Accepts product metadata
+ * - Sends to LLM for alternative product suggestions
+ * - Returns structured recommendations
+ */
+router.post("/recommendations", recommendAlternativesWithLLM);
 
 export default router;
