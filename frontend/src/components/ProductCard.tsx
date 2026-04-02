@@ -117,6 +117,25 @@ const normalizeRecommendation = (candidate: unknown): ProductRecommendation | nu
   };
 };
 
+const buildRecommendationInput = (product: ProductData) => ({
+  product_name: product.product_name || "",
+  brands: product.brands || "",
+  nutrition_grade: product.nutrition_grade || "",
+  ecoscore_grade: product.ecoscore_grade || "",
+  ingredients_text: product.ingredients_text || "",
+  harmful_ingredients: product.harmful_ingredients || [],
+  harmful_ingredients_details: (product.harmful_ingredients_details || []).slice(0, 5).map((ingredient) => ({
+    name: ingredient.name,
+    category: ingredient.category,
+    risk_level: ingredient.risk_level,
+    alternatives: ingredient.alternatives,
+  })),
+  environmental_impact: product.environmental_impact || "",
+  unified_score: product.unified_score || {},
+  ml_health_label: product.ml_health_label,
+  rule_based_health_label: product.rule_based_health_label,
+});
+
 /**
  * Check if product needs recommendations (Moderately or Highly harmful)
  */
@@ -397,7 +416,7 @@ const RecommendationSection = ({ product }: { product: ProductData }) => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ product }),
+          body: JSON.stringify({ product: buildRecommendationInput(product) }),
         });
 
         const data = (await response.json().catch(() => ({}))) as LLMRecommendationResponse;
