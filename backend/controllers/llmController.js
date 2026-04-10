@@ -227,10 +227,9 @@ export const recommendAlternativesWithLLM = async (req, res) => {
           content: promptText,
         },
       ],
-      reasoning: { enabled: true },
-      temperature: 0.7,
-      top_p: 0.95,
-      max_tokens: 1024,
+      temperature: 0.2,
+      top_p: 0.9,
+      max_tokens: 320,
     });
 
     const assistantMessage = apiResponse?.choices?.[0]?.message;

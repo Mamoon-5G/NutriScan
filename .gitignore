@@ -1,0 +1,17 @@
+# Keep local-only tooling and generated skills out of public git history
+skills/
+
+# Local agent/config folders
+.claude/
+
+# Node.js
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+.env.*
+!.env.example
