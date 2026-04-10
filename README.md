@@ -196,7 +196,7 @@ This project is licensed under the [MIT License](./LICENSE).
 ---
 
 <div align="center">
-Created by · [Mamoon Siddiqui](www.github.com/mamoon-5g)
+Created by - [Mamoon Siddiqui](https://github.com/Mamoon-5G/) <br/>
 Made with 💚 · Data from [OpenFoodFacts](https://world.openfoodfacts.org/) · Deployed on [Vercel](https://vercel.com/)
 
 </div>
