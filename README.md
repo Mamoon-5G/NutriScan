@@ -1,66 +1,75 @@
-# EcoScan
+<div align="center">
+
+# 🌿 EcoScan
 
 ### Scan smarter. Eat healthier. Choose greener.
 
-[![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Bundler-Vite-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/API-Express-000000?logo=express&logoColor=white)](https://expressjs.com/)
-[![Python](https://img.shields.io/badge/ML-Python-3776AB?logo=python&logoColor=white)](https://python.org/)
+[![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Bundler-Vite-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/API-Express-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![Python](https://img.shields.io/badge/ML-Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 
-EcoScan helps users analyze food products by scanning or entering barcodes and turning raw label data into clear health and sustainability insights.
+**EcoScan turns raw food labels into clear health and sustainability insights — instantly. It also includes an LLM-powered Analyze Food feature for both packaged and non-packaged foods, explaining risks, ingredient impact, and better alternatives in plain language.**
 
-## Live Demo
+[🚀 Live Demo](https://nutri-scanner-one.vercel.app/) · [📖 Docs](#installation) · [🤝 Contributing](#contributing)
 
-- Frontend: https://your-app.vercel.app
-- Backend API: https://your-api.onrender.com
+---
 
-Replace these links with your deployed URLs.
+</div>
 
-## Preview
+## 📸 Preview
 
-![EcoScan Project Preview](frontend/public/og-image.svg)
+<p align="center">
+  <img src="docs/screenshots/ras-kik-mango-analysis.png" alt="Product analysis view" width="49%" />
+  <img src="docs/screenshots/ras-kik-mango-alternatives.png" alt="Alternatives and AI assessment" width="49%" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/dairy-milk-analysis.png" alt="Dairy Milk analysis view" width="49%" />
+  <img src="docs/screenshots/dairy-milk-alternatives.png" alt="Dairy Milk alternatives" width="49%" />
+</p>
 
-For additional screenshots, add images in a `docs/screenshots/` folder and link them here.
+---
 
-## Why EcoScan
+## 🤔 Why EcoScan?
 
-- Product labels are often hard to compare quickly.
-- Health claims can be misleading without context.
-- Sustainability decisions are easier with a single, clear scorecard.
+| Problem | EcoScan's Answer |
+|---|---|
+| 🏷️ Product labels are hard to compare | Clear per-nutrient breakdown at a glance |
+| ⚠️ Health claims can mislead | Context-aware analysis with NOVA-based signals |
+| 🌍 Sustainability is hard to judge | Single scorecard: packaging, palm oil, and more |
 
-EcoScan combines OpenFoodFacts data, OCR/barcode detection, and ML-assisted interpretation to make food decisions more transparent.
+EcoScan combines **OpenFoodFacts data**, **OCR/barcode detection**, and **ML-assisted interpretation** to make food decisions more transparent.
 
-## Core Features
+---
 
-- Barcode scanning from uploaded images
-- Manual barcode lookup for fast checks
-- Product-level nutrition analysis (sugar, fat, salt, fiber, protein, energy)
-- Additives and processing context (including NOVA-based signal)
-- Sustainability-focused outputs such as packaging/plastic and palm-oil indicators
-- Actionable recommendation summary for end users
-- Mobile-friendly React UI for quick real-world use
+## ✨ Features
 
-## Tech Stack
+- 📷 **Barcode scanning** from uploaded images
+- 🔢 **Manual barcode lookup** for fast checks
+- 🥗 **Nutrition analysis** — sugar, fat, salt, fiber, protein, energy
+- 🧪 **Additives & processing context** with NOVA-based signals
+- 🤖 **LLM Analyze Food** for natural-language analysis of packaged and non-packaged foods, plus healthier alternative suggestions
+- 🌱 **Sustainability indicators** — packaging, palm oil
+- 💡 **Actionable recommendation summary** per product
+- 📱 **Mobile-friendly UI** for real-world use
 
-- Frontend: React, TypeScript, Vite, Tailwind CSS, Radix UI
-- Backend: Node.js, Express, Axios, Multer, Tesseract.js
-- ML Layer: Python, scikit-learn model inference scripts
-- Data Source: OpenFoodFacts
-- Deployment: Vercel (frontend), Render or similar (backend)
+---
 
-## Project Structure
+## 🛠️ Tech Stack
 
-```text
-EcoScan-React/
-|- backend/
-|- frontend/
-|- ml/
-|- requirements.txt
-`- README.md
-```
+| Layer | Technologies |
+|---|---|
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Radix UI |
+| **Backend** | Node.js, Express, Axios, Multer, Tesseract.js |
+| **ML** | Python, scikit-learn |
+| **Data** | OpenFoodFacts |
+| **Deployment** | Vercel (frontend), Render (backend) |
 
-## Installation
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -68,27 +77,27 @@ EcoScan-React/
 - npm 8+
 - Python 3.8+
 
-### 1. Clone
+### 1. Clone the repo
 
 ```bash
 git clone <your-repo-url>
 cd EcoScan-React
 ```
 
-### 2. Install Dependencies
+### 2. Install dependencies
 
 ```bash
-cd backend
-npm install
+# Backend
+cd backend && npm install
 
-cd ../frontend
-npm install
+# Frontend
+cd ../frontend && npm install
 
-cd ..
-pip install -r requirements.txt
+# ML layer
+cd .. && pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
+### 3. Configure environment
 
 Create `frontend/.env.local`:
 
@@ -98,64 +107,96 @@ VITE_SITE_URL=http://localhost:5173
 VITE_OG_IMAGE_URL=http://localhost:5173/og-image.svg
 ```
 
-Backend defaults work locally, but you can also add `backend/.env`:
+Optionally create `backend/.env`:
 
 ```env
 PORT=3001
 NODE_ENV=development
 ```
 
-## Usage
-
-### Run Locally
-
-Terminal 1:
+### 4. Run locally
 
 ```bash
-cd backend
-npm start
+# Terminal 1 — backend
+cd backend && npm start
+
+# Terminal 2 — frontend
+cd frontend && npm run dev
 ```
 
-Terminal 2:
+Open **http://localhost:5173** in your browser.
 
-```bash
-cd frontend
-npm run dev
+---
+
+## 🔄 How It Works
+
+```
+Upload image / enter barcode / describe non-packaged food
+        ↓
+Fetch from OpenFoodFacts
+        ↓
+Backend enrichment + ML health signal
+        ↓
+LLM-powered food analysis + alternatives
+        ↓
+Clear, human-readable insights
 ```
 
-Open: http://localhost:5173
+---
 
-### Typical User Flow
+## 📡 API Reference
 
-1. Upload an image or enter a barcode.
-2. EcoScan fetches product data from OpenFoodFacts.
-3. Backend enriches results with analysis + ML-assisted health signal.
-4. Frontend presents clear, human-readable insights.
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/upload` | Detect barcode from uploaded image |
+| `GET` | `/api/product/:barcode` | Retrieve product by barcode |
+| `POST` | `/api/product/analyze` | Get full analysis and recommendations |
 
-## API Snapshot
+---
 
-- POST `/api/upload` - Detect barcode from uploaded image
-- GET `/api/product/:barcode` - Retrieve product information
-- POST `/api/product/analyze` - Get analysis and recommendation output
+## 📁 Project Structure
 
-## Contributing
+```
+EcoScan-React/
+├── backend/        # Node.js/Express API
+├── frontend/       # React + Vite app
+├── ml/             # Python ML inference scripts
+├── requirements.txt
+└── README.md
+```
 
-Contributions are welcome.
+---
+
+## 🗺️ Roadmap
+
+- [ ] Real-time camera barcode scanning
+- [ ] Saved scan history and user dashboard
+- [ ] Region-aware nutrition standards and warnings
+- [ ] Better explainability for ML-based scoring
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how:
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -m "feat: add your feature"`
+3. Commit your changes: `git commit -m "feat: add your feature"`
 4. Push and open a Pull Request
 
-For substantial changes, open an issue first to discuss design and scope.
+For substantial changes, **open an issue first** to discuss design and scope.
 
-## Roadmap Ideas
+---
 
-- Real-time camera barcode scanning
-- Saved scan history and user dashboard
-- Region-aware nutrition standards and warnings
-- Better explainability for ML-based scoring
+## 📄 License
 
-## License
+This project is licensed under the [MIT License](./LICENSE).
 
-Add your license information here (for example: MIT).
+---
+
+<div align="center">
+
+Made with 💚 · Data from [OpenFoodFacts](https://world.openfoodfacts.org/) · Deployed on [Vercel](https://vercel.com/)
+
+</div>
