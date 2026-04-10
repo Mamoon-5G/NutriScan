@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌿 EcoScan
+# 🌿 NutriScan
 
 ### Scan smarter. Eat healthier. Choose greener.
 
@@ -11,7 +11,7 @@
 [![Python](https://img.shields.io/badge/ML-Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 
-**EcoScan turns raw food labels into clear health and sustainability insights — instantly. It also includes an LLM-powered Analyze Food feature for both packaged and non-packaged foods, explaining risks, ingredient impact, and better alternatives in plain language.**
+**NutriScan turns raw food labels into clear health and sustainability insights — instantly. It also includes an LLM-powered Analyze Food feature for both packaged and non-packaged foods, explaining risks, ingredient impact, and better alternatives in plain language.**
 
 [🚀 Live Demo](https://nutri-scanner-one.vercel.app/) · [📖 Docs](#installation) · [🤝 Contributing](#contributing)
 
@@ -32,15 +32,15 @@
 
 ---
 
-## 🤔 Why EcoScan?
+## 🤔 Why NutriScan?
 
-| Problem | EcoScan's Answer |
+| Problem | NutriScan's Answer |
 |---|---|
 | 🏷️ Product labels are hard to compare | Clear per-nutrient breakdown at a glance |
 | ⚠️ Health claims can mislead | Context-aware analysis with NOVA-based signals |
 | 🌍 Sustainability is hard to judge | Single scorecard: packaging, palm oil, and more |
 
-EcoScan combines **OpenFoodFacts data**, **OCR/barcode detection**, and **ML-assisted interpretation** to make food decisions more transparent.
+NutriScan combines **OpenFoodFacts data**, **OCR/barcode detection**, and **ML-assisted interpretation** to make food decisions more transparent.
 
 ---
 
@@ -81,7 +81,7 @@ EcoScan combines **OpenFoodFacts data**, **OCR/barcode detection**, and **ML-ass
 
 ```bash
 git clone <your-repo-url>
-cd EcoScan-React
+cd NutriScan-React
 ```
 
 ### 2. Install dependencies
@@ -157,7 +157,7 @@ Clear, human-readable insights
 ## 📁 Project Structure
 
 ```
-EcoScan-React/
+NutriScan-React/
 ├── backend/        # Node.js/Express API
 ├── frontend/       # React + Vite app
 ├── ml/             # Python ML inference scripts
@@ -196,7 +196,7 @@ This project is licensed under the [MIT License](./LICENSE).
 ---
 
 <div align="center">
-
+Created by · [Mamoon Siddiqui](www.github.com/mamoon-5g)
 Made with 💚 · Data from [OpenFoodFacts](https://world.openfoodfacts.org/) · Deployed on [Vercel](https://vercel.com/)
 
 </div>
