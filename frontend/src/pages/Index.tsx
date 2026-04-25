@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Leaf, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Leaf, AlertCircle, CheckCircle } from "lucide-react";
 import axios from "axios";
 import { UploadForm } from "@/components/UploadForm";
 import { ProductCard } from "@/components/ProductCard";
-import { AnalysisCard } from "@/components/AnalysisCard";
 import { MLAssessmentCard } from "@/components/MLAssessmentCard";
+import { SmartLoader } from "@/components/SmartLoader";
+import { MissingProductVisionCard } from "@/components/MissingProductVisionCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import LiveScanner from "@/components/LiveScanner";
@@ -39,16 +40,17 @@ interface ProductData {
 const Index = () => {
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
   const [productData, setProductData] = useState<ProductData | null>(null);
-  const [analysisData, setAnalysisData] = useState<string>("");
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
-  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [missingBarcode, setMissingBarcode] = useState<string | null>(null);
 
   // Clear error when product changes
   useEffect(() => {
     if (productData) {
       setError(null);
+      setMissingBarcode(null);
     }
   }, [productData]);
 
@@ -56,53 +58,43 @@ const Index = () => {
   const fetchProductDetails = async (barcode: string) => {
     setIsLoadingProduct(true);
     setError(null);
+    setMissingBarcode(null);
 
     try {
       const { data } = await axios.get(`${apiBaseUrl}/api/product/${barcode}`);
       setProductData(data);
-      await analyzeProduct(data);
-
+      // We no longer call `await analyzeProduct(data)` because the backend returns all ML features, scores, and details directly in `data` !
       toast.success("Product loaded successfully!");
     } catch (error: any) {
       console.error("Error fetching product:", error);
-      const errorMessage = error.response?.data?.error || "Failed to load product details. Please check the barcode and try again.";
-      toast.error(errorMessage);
-      setError(errorMessage);
-      setProductData(null);
-      setAnalysisData("");
+      
+      // Handle the missing product 404 edge-case
+      if (error.response?.status === 404) {
+        setMissingBarcode(barcode);
+        setProductData(null);
+      } else {
+        const errorMessage = error.response?.data?.error || "Failed to load product details. Please check the barcode and try again.";
+        toast.error(errorMessage);
+        setError(errorMessage);
+        setProductData(null);
+      }
     } finally {
       setIsLoadingProduct(false);
     }
   };
 
-  // Analyze product using API
-  const analyzeProduct = async (product: ProductData) => {
-    setIsLoadingAnalysis(true);
-
-    try {
-      const { data } = await axios.post(`${apiBaseUrl}/api/product/analyze`, { product });
-      setAnalysisData(data.analysis || data.summary || "Analysis completed successfully.");
-      toast.success("Analysis completed!");
-    } catch (error: any) {
-      console.error("Error analyzing product:", error);
-      toast.error("Failed to analyze product. Please try again.");
-      setAnalysisData("Analysis unavailable at the moment.");
-    } finally {
-      setIsLoadingAnalysis(false);
-    }
+  const handleVisionDataGenerated = async (data: ProductData) => {
+    setMissingBarcode(null);
+    setProductData(data);
   };
 
-  // Handle re-analyze button
-  const handleReanalyze = () => {
-    if (productData) {
-      analyzeProduct(productData);
-    }
+  const cancelVision = () => {
+    setMissingBarcode(null);
   };
 
   // Reset current view
   const handleReset = () => {
     setProductData(null);
-    setAnalysisData("");
     setError(null);
   };
 
@@ -129,21 +121,26 @@ const Index = () => {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <UploadForm
             onBarcodeDetected={fetchProductDetails}
-            isLoading={isLoadingProduct || isLoadingAnalysis}
+            isLoading={isLoadingProduct}
             onOpenCamera={() => setShowCamera(true)}
           />
         </div>
 
-        {/* Results Section */}
-        {(productData || isLoadingProduct) && (
+        {/* Results Section or Missing Product UI */}
+        {missingBarcode ? (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <MissingProductVisionCard 
+               barcode={missingBarcode} 
+               onDataGenerated={handleVisionDataGenerated} 
+               onCancel={cancelVision}
+            />
+          </div>
+        ) : (productData || isLoadingProduct) && (
           <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {isLoadingProduct ? (
-              <Card className="shadow-medium border-border/50 animate-pulse">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="text-center space-y-3">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-                    <p className="text-muted-foreground">Loading product details...</p>
-                  </div>
+              <Card className="shadow-medium border-border/50">
+                <CardContent>
+                  <SmartLoader />
                 </CardContent>
               </Card>
             ) : productData ? (
@@ -155,16 +152,9 @@ const Index = () => {
                   ml_health_label={productData.ml_health_label}
                   eco_label={productData.labels?.eco_label}
                   environmental_impact={productData.environmental_impact}
-                  isLoading={isLoadingAnalysis}
+                  isLoading={false}
                   error={error}
                 />
-                {analysisData && (
-                  <AnalysisCard
-                    analysis={analysisData}
-                    onReanalyze={handleReanalyze}
-                    isLoading={isLoadingAnalysis}
-                  />
-                )}
               </>
             ) : null}
           </div>
