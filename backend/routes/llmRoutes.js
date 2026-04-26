@@ -1,10 +1,19 @@
 import express from "express";
 import multer from "multer";
+import os from "os";
 import { analyzeFoodWithLLM, recommendAlternativesWithLLM } from "../controllers/llmController.js";
 
 const router = express.Router();
 
-const storage = multer.memoryStorage();
+// Use temporary disk storage to prevent massive RAM memory spikes during concurrent uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, os.tmpdir());
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`);
+  }
+});
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {

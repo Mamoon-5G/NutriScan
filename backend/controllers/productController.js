@@ -1,5 +1,6 @@
 import axios from "axios";
 import fs from "fs";
+import { promises as fsPromises } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { predictHealthML } from "../utils/mlPredictor.js";
@@ -9,21 +10,30 @@ import { calculateUnifiedScore } from "../utils/scoreCalculator.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// In-Memory Database Cache (Prevents OFF Rate-Limiting & Speeds up UI block)
+// Keeping limit at 500 items to prevent RAM bloat on larger instances
+const productCache = new Map();
+const CACHE_LIMIT = 500;
+
 // Ensure data directory exists
 const dataDir = path.resolve(__dirname, "../data");
 const CSV_PATH = path.join(dataDir, "training_data.csv");
 
-const ensureDataDir = () => {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+const ensureDataDir = async () => {
+  try {
+    await fsPromises.access(dataDir);
+  } catch {
+    await fsPromises.mkdir(dataDir, { recursive: true });
     console.log("📁 Created data directory:", dataDir);
   }
 };
 
-const ensureCSVHeader = () => {
-  ensureDataDir();
-  if (!fs.existsSync(CSV_PATH)) {
-    fs.writeFileSync(
+const ensureCSVHeader = async () => {
+  await ensureDataDir();
+  try {
+    await fsPromises.access(CSV_PATH);
+  } catch {
+    await fsPromises.writeFile(
       CSV_PATH,
       "sugar,fat,salt,fiber,protein,energy,additives,nova,plastic,palm_oil,health_label,eco_label\n"
     );
@@ -89,9 +99,9 @@ const generateLabels = (f) => {
 };
 
 
-const saveToCSV = (features, labels) => {
+const saveToCSV = async (features, labels) => {
   try {
-    ensureCSVHeader();
+    await ensureCSVHeader();
 
     const row = [
       features.sugar_100g,
@@ -108,10 +118,9 @@ const saveToCSV = (features, labels) => {
       labels.eco_label
     ].join(",");
 
-    fs.appendFileSync(CSV_PATH, row + "\n");
+    await fsPromises.appendFile(CSV_PATH, row + "\n");
   } catch (err) {
     console.warn("⚠️ Failed to save to CSV:", err.message);
-    // Don't crash if CSV save fails
   }
 };
 
@@ -194,6 +203,12 @@ export const fetchProductByBarcode = async (req, res) => {
       return res.status(400).json({ error: "Barcode is required" });
     }
 
+    // --- CACHE LAYER ---
+    if (productCache.has(barcode)) {
+      console.log(`⚡ Serving from cache for barcode: ${barcode}`);
+      return res.json(productCache.get(barcode));
+    }
+
     console.log(`🔍 Fetching product data for barcode: ${barcode}`);
     const response = await axios.get(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
 
@@ -208,8 +223,8 @@ export const fetchProductByBarcode = async (req, res) => {
     const ml_features = extractMLFeatures(product);
     const rule_based_labels = generateLabels(ml_features);
     
-    // Try to save to CSV (non-critical)
-    saveToCSV(ml_features, rule_based_labels);
+    // Fire and forget Async CSV save (non-blocking)
+    saveToCSV(ml_features, rule_based_labels).catch(err => console.warn("Background CSV error:", err));
 
     // Get ML prediction (optional - won't crash if it fails)
     let ml_prediction = { ml_health_label: "unavailable" };
@@ -274,6 +289,13 @@ export const fetchProductByBarcode = async (req, res) => {
       // Unified scoring
       unified_score: unifiedScore
     };
+
+    // Cache management (LRU pattern simplified)
+    if (productCache.size >= CACHE_LIMIT) {
+       const firstKey = productCache.keys().next().value;
+       productCache.delete(firstKey);
+    }
+    productCache.set(barcode, responseData);
 
     res.json(responseData);
   } catch (error) {

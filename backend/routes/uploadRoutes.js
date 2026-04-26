@@ -1,12 +1,20 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
+import os from "os";
 import { uploadAndAnalyzeProduct } from "../controllers/uploadController.js";
 
 const router = express.Router();
 
-// Configure multer for file uploads in memory
-const storage = multer.memoryStorage();
+// Configure multer for file uploads strictly to Disk to prevent RAM exhaustion
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, os.tmpdir()); // Use native OS temp directory
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname}`);
+  }
+});
 
 // File filter to only allow images
 const fileFilter = (req, file, cb) => {
