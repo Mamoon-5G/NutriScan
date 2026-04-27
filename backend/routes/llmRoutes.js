@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import os from "os";
-import { analyzeFoodWithLLM, recommendAlternativesWithLLM } from "../controllers/llmController.js";
+import { analyzeFoodWithLLM, recommendAlternativesWithLLM, analyzeProductVision } from "../controllers/llmController.js";
 
 const router = express.Router();
 
@@ -36,6 +36,16 @@ const upload = multer({
  * - Returns analysis text
  */
 router.post("/", upload.single("image"), analyzeFoodWithLLM);
+
+/**
+ * POST /api/analyze-vision
+ * - Accepts multiple images (ingredients and nutrition)
+ * - Returns structured product data
+ */
+router.post("/vision", upload.fields([
+  { name: "ingredients_image", maxCount: 1 },
+  { name: "nutrition_image", maxCount: 1 }
+]), analyzeProductVision);
 
 /**
  * POST /api/analyze-food/recommendations

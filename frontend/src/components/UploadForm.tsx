@@ -110,70 +110,68 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
 
   return (
     <>
-      <Card className="shadow-medium border-border/50 animate-in fade-in duration-500">
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl sm:text-2xl font-bold">Scan Product</CardTitle>
-          <CardDescription className="text-sm sm:text-base">
+      <Card className="shadow-premium border-border/50 glass overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-top-4 duration-700">
+        <CardHeader className="text-center pt-8 pb-2">
+          <CardTitle className="text-3xl font-black font-display tracking-tight text-foreground">Scan Product</CardTitle>
+          <CardDescription className="text-muted-foreground text-md max-w-xs mx-auto">
             Upload a product image or enter the barcode manually
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Upload Buttons - Mobile Optimized */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">
-              Quick Actions
-            </Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
               <Button
                 type="button"
                 onClick={onOpenCamera}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 text-sm px-4 py-3 w-full gradient-primary shadow-soft font-semibold"
+                className="flex flex-col items-center justify-center gap-3 h-28 w-full rounded-3xl border-2 border-primary/20 bg-primary/5 text-primary shadow-soft font-bold hover:bg-primary/10 transition-all group"
               >
-                <FiCamera className="h-4 w-4" />
-                <span className="hidden sm:inline">Scan Barcode</span>
-                <span className="sm:hidden">Scan</span>
+                <div className="p-3 rounded-2xl bg-primary text-white group-hover:scale-110 transition-transform">
+                  <FiCamera className="h-6 w-6" />
+                </div>
+                <span className="text-sm">Live Scan</span>
               </Button>
               <Button
                 type="button"
                 onClick={() => setGeminiModalOpen(true)}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 text-sm px-4 py-3 w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-soft font-semibold hover:from-purple-600 hover:to-pink-600"
+                className="flex flex-col items-center justify-center gap-3 h-28 w-full rounded-3xl border-2 border-purple-500/20 bg-purple-500/5 text-purple-600 shadow-soft font-bold hover:bg-purple-500/10 transition-all group"
               >
-                <AiOutlineRobot className="h-4 w-4" />
-                <span className="hidden sm:inline">AI Food Scan</span>
-                <span className="sm:hidden">AI Scan</span>
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 text-white group-hover:scale-110 transition-transform">
+                  <AiOutlineRobot className="h-6 w-6" />
+                </div>
+                <span className="text-sm">AI Food Scan</span>
               </Button>
             </div>
           </div>
 
-          {/* Image Upload */}
           <div className="space-y-3">
-            <Label htmlFor="image-upload" className="text-sm font-medium">
-              Upload Product Image
-            </Label>
             <div className="flex flex-col items-center justify-center gap-4">
               <label
                 htmlFor="image-upload"
-                className={`flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-8 transition-all ${
+                className={`flex w-full cursor-pointer flex-col items-center justify-center rounded-[2rem] border-2 border-dashed px-6 py-10 transition-all ${
                   uploadingImage
                     ? "border-primary bg-primary/5"
-                    : "border-border bg-muted/30 hover:border-primary hover:bg-muted/50"
+                    : "border-border bg-white/30 dark:bg-black/20 hover:border-primary hover:bg-white/50 dark:hover:bg-black/40"
                 }`}
               >
                 {uploadingImage ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <span className="text-sm font-medium text-foreground">Processing...</span>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative h-12 w-12">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    </div>
+                    <span className="text-sm font-bold tracking-tight text-foreground">Analyzing Image...</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <Upload className="h-10 w-10 text-muted-foreground" />
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-4 rounded-full bg-muted/50 text-muted-foreground">
+                      <Upload className="h-8 w-8" />
+                    </div>
                     <div className="text-center">
-                      <span className="block text-sm font-medium text-foreground mb-1">
-                        Click to upload or drag and drop
+                      <span className="block text-sm font-bold text-foreground mb-1">
+                        Upload Product Photo
                       </span>
-                      <span className="text-xs text-muted-foreground">PNG, JPG up to 5MB</span>
+                      <span className="text-xs text-muted-foreground font-medium">PNG or JPG up to 5MB</span>
                     </div>
                   </div>
                 )}

@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Camera, RefreshCw, X, Sparkles, Database, ArrowRight } from "lucide-react";
+import { Camera, RefreshCw, X, Sparkles, Database } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MissingProductVisionCardProps {
   barcode: string;
@@ -104,7 +105,7 @@ export const MissingProductVisionCard = ({
       formData.append("nutrition_image", dataUrlToBlob(images.nutrition), "nut.jpg");
 
       // We'll tell the backend to use Gemini Vision to build the ProductData
-      const response = await axios.post(`${apiBaseUrl}/api/analyze-vision`, formData, {
+      const response = await axios.post(`${apiBaseUrl}/api/analyze-food/vision`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       
@@ -119,112 +120,190 @@ export const MissingProductVisionCard = ({
 
   // Primary Action Button UI based on state
   return (
-    <Card className="relative overflow-hidden border-border/50 shadow-medium">
-      <div className="absolute top-0 right-0 p-4">
-         <Button variant="ghost" size="icon" onClick={onCancel} className="text-muted-foreground hover:bg-muted">
-           <X size={20} />
-         </Button>
-      </div>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative"
+    >
+      <Card className="relative overflow-hidden border-border/50 shadow-premium glass">
+        <div className="absolute top-0 right-0 p-4 z-10">
+           <Button variant="ghost" size="icon" onClick={onCancel} className="text-muted-foreground hover:bg-muted/50 rounded-full">
+             <X size={20} />
+           </Button>
+        </div>
 
-      <CardContent className="p-8">
-        {!isCameraActive && photoStep === "ingredients" && (
-          <div className="flex flex-col items-center text-center max-w-md mx-auto space-y-6 pt-6">
-            <div className="h-16 w-16 bg-primary/10 text-primary flex items-center justify-center rounded-2xl">
-              <Database className="h-8 w-8" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold font-display tracking-tight text-foreground mb-2">
-                 Not Found in Global Registry
-              </h2>
-              <p className="text-muted-foreground">
-                 We couldn't find barcode <span className="font-mono text-foreground font-medium">{barcode}</span> in OpenFoodFacts. 
-                 But our AI can extract the data directly from the packaging.
-              </p>
-            </div>
-            
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-left w-full">
-              <h4 className="flex items-center gap-2 font-semibold text-primary mb-2">
-                 <Sparkles className="h-4 w-4" /> AI OCR Extraction
-              </h4>
-              <p className="text-sm text-foreground/80 mb-3">You will need to snap two clear photos:</p>
-              <ul className="text-sm space-y-2 text-foreground/70">
-                 <li className="flex gap-2"><span>1.</span> 📸 The Ingredients List</li>
-                 <li className="flex gap-2"><span>2.</span> 📸 The Nutrition Facts Label</li>
-              </ul>
-            </div>
-
-            <Button onClick={startCamera} size="lg" className="w-full h-12 text-md gap-2 rounded-xl">
-               <Camera className="w-5 h-5" /> Start Scanning Label
-            </Button>
-          </div>
-        )}
-
-        {isCameraActive && (
-          <div className="flex flex-col items-center space-y-4">
-             <div className="relative w-full max-w-sm aspect-[3/4] bg-black rounded-2xl overflow-hidden border shadow-lg">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                
-                {/* Viewfinder Overlay */}
-                <div className="absolute inset-0 border-[6px] border-black/30 m-6 rounded-xl border-dashed"></div>
-                
-                <div className="absolute top-4 left-0 right-0 text-center">
-                  <span className="bg-black/60 text-white px-4 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm shadow-md">
-                     Capture: {photoStep === "ingredients" ? "Ingredients List" : "Nutrition Facts"}
-                  </span>
+        <CardContent className="p-8">
+          <AnimatePresence mode="wait">
+            {!isCameraActive && photoStep === "ingredients" && (
+              <motion.div 
+                key="intro"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="flex flex-col items-center text-center max-w-md mx-auto space-y-6 pt-6"
+              >
+                <div className="h-20 w-20 bg-primary/10 text-primary flex items-center justify-center rounded-3xl shadow-inner">
+                  <Database className="h-10 w-10" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold font-display tracking-tight text-foreground mb-3">
+                     Product Not Found
+                  </h2>
+                  <p className="text-muted-foreground leading-relaxed">
+                     Barcode <span className="font-mono text-foreground font-semibold px-1.5 py-0.5 bg-muted rounded-md">{barcode}</span> is missing from our registry. 
+                     Our AI can extract the data directly from your photos.
+                  </p>
                 </div>
                 
-                <canvas ref={canvasRef} className="hidden" />
-             </div>
-             
-             <div className="flex gap-4 w-full max-w-sm pt-2">
-                <Button variant="outline" size="lg" className="flex-1" onClick={stopCamera}>
-                   Cancel
-                </Button>
-                <Button size="lg" className="flex-1 gap-2" onClick={capturePhoto}>
-                   <Camera className="w-5 h-5" /> Snap
-                </Button>
-             </div>
-          </div>
-        )}
+                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 text-left w-full shadow-sm">
+                  <h4 className="flex items-center gap-2 font-bold text-primary mb-3">
+                     <Sparkles className="h-5 w-5 animate-pulse" /> AI Vision Extraction
+                  </h4>
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-foreground/80">Follow these steps for best results:</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-primary/10 text-center space-y-2">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Step 1</div>
+                        <div className="text-sm font-medium">Ingredients List</div>
+                      </div>
+                      <div className="bg-white/50 dark:bg-black/20 p-3 rounded-xl border border-primary/10 text-center space-y-2">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Step 2</div>
+                        <div className="text-sm font-medium">Nutrition Facts</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-        {photoStep === "done" && !isAnalyzing && (
-          <div className="flex flex-col items-center text-center space-y-6 pt-4">
-             <h3 className="text-xl font-semibold font-display">Photos Captured!</h3>
-             <div className="grid grid-cols-2 gap-4">
-                <img src={images.ingredients} alt="Ingredients" className="w-32 h-32 object-cover rounded-xl border" />
-                <img src={images.nutrition} alt="Nutrition" className="w-32 h-32 object-cover rounded-xl border" />
-             </div>
-             
-             <div className="flex w-full gap-4 pt-4 text-sm font-medium">
-               <Button variant="outline" className="flex-1 h-12" onClick={() => { setPhotoStep("ingredients"); startCamera(); }}>
-                 <RefreshCw className="w-4 h-4 mr-2" /> Retake
-               </Button>
-               <Button className="flex-1 h-12" onClick={analyzeWithVision}>
-                 <Sparkles className="w-4 h-4 mr-2" /> Extract Data
-               </Button>
-             </div>
-          </div>
-        )}
+                <Button onClick={startCamera} size="lg" className="w-full h-14 text-md gap-3 rounded-2xl shadow-lg gradient-primary hover:shadow-xl transition-all">
+                   <Camera className="w-6 h-6" /> Start AI Label Scan
+                </Button>
+              </motion.div>
+            )}
 
-        {isAnalyzing && (
-          <div className="flex flex-col items-center justify-center py-12 space-y-8">
-             <div className="relative h-20 w-20 flex items-center justify-center">
-               <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-               <Sparkles className="h-8 w-8 text-primary animate-pulse" />
-             </div>
-             <div className="text-center space-y-2">
-                <h3 className="text-lg font-semibold font-display">Gemini Vision Active</h3>
-                <p className="text-muted-foreground text-sm">Extracting macronutrients and parsing ingredients via LLM...</p>
-             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            {isCameraActive && (
+              <motion.div 
+                key="camera"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center space-y-6"
+              >
+                 <div className="relative w-full max-w-sm aspect-[3/4] bg-black rounded-3xl overflow-hidden border-4 border-muted shadow-2xl">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="absolute inset-0 w-full h-full object-cover opacity-80"
+                    />
+                    
+                    {/* Scifi Viewfinder Overlay */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {/* Corners */}
+                      <div className="absolute top-8 left-8 w-8 h-8 border-t-2 border-l-2 border-primary rounded-tl-lg"></div>
+                      <div className="absolute top-8 right-8 w-8 h-8 border-t-2 border-r-2 border-primary rounded-tr-lg"></div>
+                      <div className="absolute bottom-8 left-8 w-8 h-8 border-b-2 border-l-2 border-primary rounded-bl-lg"></div>
+                      <div className="absolute bottom-8 right-8 w-8 h-8 border-b-2 border-r-2 border-primary rounded-br-lg"></div>
+                      
+                      {/* Scanning Line */}
+                      <motion.div 
+                        animate={{ top: ["10%", "90%", "10%"] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="absolute left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_15px_hsl(var(--primary))]"
+                      />
+                      
+                      {/* Grid overlay */}
+                      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+                    </div>
+                    
+                    <div className="absolute top-6 left-0 right-0 text-center">
+                      <span className="bg-black/70 text-white px-5 py-2 rounded-full text-xs font-bold tracking-widest uppercase backdrop-blur-md border border-white/10 shadow-xl">
+                         Capture: {photoStep === "ingredients" ? "Ingredients" : "Nutrition"}
+                      </span>
+                    </div>
+                    
+                    <canvas ref={canvasRef} className="hidden" />
+                 </div>
+                 
+                 <div className="flex gap-4 w-full max-w-sm">
+                    <Button variant="outline" size="lg" className="flex-1 h-14 rounded-2xl border-2" onClick={stopCamera}>
+                       Cancel
+                    </Button>
+                    <Button size="lg" className="flex-1 h-14 gap-3 rounded-2xl shadow-lg gradient-primary" onClick={capturePhoto}>
+                       <Camera className="w-6 h-6" /> Capture
+                    </Button>
+                 </div>
+              </motion.div>
+            )}
+
+            {photoStep === "done" && !isAnalyzing && (
+              <motion.div 
+                key="preview"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center text-center space-y-8 pt-4"
+              >
+                 <div className="space-y-2">
+                   <h3 className="text-2xl font-bold font-display">Ready to Analyze</h3>
+                   <p className="text-muted-foreground text-sm">Review your captures before processing</p>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-6 w-full max-w-md">
+                    <div className="space-y-2">
+                      <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-primary/20 shadow-md group">
+                        <img src={images.ingredients} alt="Ingredients" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] py-1 font-bold">INGREDIENTS</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-primary/20 shadow-md group">
+                        <img src={images.nutrition} alt="Nutrition" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] py-1 font-bold">NUTRITION</div>
+                      </div>
+                    </div>
+                 </div>
+                 
+                 <div className="flex w-full gap-4 pt-4">
+                   <Button variant="outline" className="flex-1 h-14 rounded-2xl border-2" onClick={() => { setPhotoStep("ingredients"); startCamera(); }}>
+                     <RefreshCw className="w-5 h-5 mr-2" /> Retake
+                   </Button>
+                   <Button className="flex-1 h-14 rounded-2xl shadow-lg gradient-primary" onClick={analyzeWithVision}>
+                     <Sparkles className="w-5 h-5 mr-2" /> Extract with AI
+                   </Button>
+                 </div>
+              </motion.div>
+            )}
+
+            {isAnalyzing && (
+              <motion.div 
+                key="analyzing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center py-16 space-y-10"
+              >
+                 <div className="relative h-32 w-32 flex items-center justify-center">
+                   <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 rounded-full border-[3px] border-dashed border-primary/40"
+                   />
+                   <div className="absolute inset-2 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin"></div>
+                   <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+                   </div>
+                 </div>
+                 <div className="text-center space-y-3">
+                    <h3 className="text-2xl font-bold font-display tracking-tight">Gemini Vision Processing</h3>
+                    <p className="text-muted-foreground max-w-xs mx-auto">
+                      Our neural engine is currently reading the labels and calculating nutritional scores...
+                    </p>
+                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };

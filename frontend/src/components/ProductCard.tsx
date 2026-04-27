@@ -2,6 +2,7 @@ import { Package, Award, Leaf, AlertTriangle, ChevronDown, AlertCircle, CheckCir
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ImpactBadge, parseEnvironmentalImpact } from "./ImpactBadge";
 import { RecommendationList } from "./RecommendationList";
 import type { ProductRecommendation } from "./RecommendationList";
@@ -171,80 +172,94 @@ const needsRecommendations = (product: ProductData): boolean => {
 /**
  * Expandable ingredient card
  */
-const IngredientExpandable = ({ ingredient }: { ingredient: IngredientDetail }) => {
+const IngredientExpandable = ({ ingredient, index }: { ingredient: IngredientDetail; index: number }) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border border-border/50 rounded-lg overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="border border-border/50 rounded-xl overflow-hidden glass hover:border-destructive/30 transition-colors"
+    >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-destructive/5 transition-colors"
       >
         <div className="flex-1 text-left">
           <div className="flex items-center gap-3">
+            <div className={`h-2 w-2 rounded-full ${ingredient.risk_level.toLowerCase().includes('high') ? 'bg-destructive animate-pulse' : 'bg-orange-400'}`} />
             <div>
-              <h4 className="font-semibold text-foreground">{ingredient.name}</h4>
-              <p className="text-xs text-muted-foreground mt-1">{ingredient.code.toUpperCase()} • {ingredient.category}</p>
+              <h4 className="font-bold text-foreground text-sm">{ingredient.name}</h4>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5 font-bold">{ingredient.code.toUpperCase()} • {ingredient.category}</p>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-semibold ${getRiskLevelColor(ingredient.risk_level)}`}>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className={`text-[10px] font-bold px-2 py-0 h-5 border-none bg-muted/50 ${getRiskLevelColor(ingredient.risk_level)}`}>
             {ingredient.risk_level}
-          </span>
+          </Badge>
           <ChevronDown
-            size={20}
-            className={`transition-transform ${expanded ? 'rotate-180' : ''} text-muted-foreground`}
+            size={16}
+            className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''} text-muted-foreground`}
           />
         </div>
       </button>
 
-      {expanded && (
-        <div className="bg-muted/30 border-t border-border/50 p-4 space-y-4">
-          <div>
-            <h5 className="text-sm font-semibold text-foreground mb-1">Description</h5>
-            <p className="text-sm text-muted-foreground">{ingredient.description}</p>
-          </div>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="bg-muted/30 border-t border-border/50 p-5 space-y-5">
+              <div className="space-y-1">
+                <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Description</h5>
+                <p className="text-sm text-foreground leading-relaxed">{ingredient.description}</p>
+              </div>
 
-          <div>
-            <h5 className="text-sm font-semibold text-destructive mb-2">Why It's Harmful</h5>
-            <p className="text-sm text-foreground bg-destructive/10 rounded p-3 border-l-4 border-destructive">
-              {ingredient.why_harmful}
-            </p>
-          </div>
+              <div className="space-y-2">
+                <h5 className="text-xs font-bold uppercase tracking-widest text-destructive">Why It's Harmful</h5>
+                <div className="text-sm text-foreground bg-destructive/5 rounded-xl p-4 border-l-4 border-destructive shadow-sm">
+                  {ingredient.why_harmful}
+                </div>
+              </div>
 
-          <div>
-            <h5 className="text-sm font-semibold text-foreground mb-2">Health Effects</h5>
-            <ul className="space-y-1">
-              {ingredient.health_effects.map((effect, idx) => (
-                <li key={idx} className="text-sm text-foreground flex gap-2">
-                  <span className="text-destructive shrink-0">•</span>
-                  <span>{effect}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+              <div className="space-y-2">
+                <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Health Effects</h5>
+                <div className="flex flex-wrap gap-2">
+                  {ingredient.health_effects.map((effect, idx) => (
+                    <Badge key={idx} variant="secondary" className="bg-white/50 dark:bg-black/20 text-foreground/80 border-none px-3 py-1">
+                       {effect}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <h5 className="text-xs font-semibold text-muted-foreground mb-1">Environmental Impact</h5>
-              <p className="text-sm text-foreground">{ingredient.environmental_impact}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                <div className="space-y-1">
+                  <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Environmental Impact</h5>
+                  <p className="text-sm text-foreground">{ingredient.environmental_impact}</p>
+                </div>
+                <div className="space-y-1">
+                  <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Common Usage</h5>
+                  <p className="text-sm text-foreground">{ingredient.usage}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <h5 className="text-xs font-bold uppercase tracking-widest text-primary">Healthier Alternatives</h5>
+                <div className="text-sm text-foreground bg-primary/5 rounded-xl p-4 border-l-4 border-primary shadow-sm">
+                  {ingredient.alternatives}
+                </div>
+              </div>
             </div>
-            <div>
-              <h5 className="text-xs font-semibold text-muted-foreground mb-1">Common Usage</h5>
-              <p className="text-sm text-foreground">{ingredient.usage}</p>
-            </div>
-          </div>
-
-          <div>
-            <h5 className="text-sm font-semibold text-primary mb-1">Healthier Alternatives</h5>
-            <p className="text-sm text-foreground bg-primary/10 rounded p-3 border-l-4 border-primary">
-              {ingredient.alternatives}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
@@ -253,99 +268,108 @@ const IngredientExpandable = ({ ingredient }: { ingredient: IngredientDetail }) 
  */
 const ProductInfoSummary = ({ product }: { product: ProductData }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Product Image and Basic Info */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {product.image_url && (
-          <div className="shrink-0">
-            <img
-              src={product.image_url}
-              alt={product.product_name || "Product"}
-              className="h-32 w-32 rounded-lg object-cover shadow-soft"
-            />
+      <div className="flex flex-col sm:flex-row gap-6">
+        {product.image_url ? (
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className="shrink-0 mx-auto sm:mx-0"
+          >
+            <div className="relative p-1 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-soft">
+              <img
+                src={product.image_url}
+                alt={product.product_name || "Product"}
+                className="h-40 w-40 rounded-xl object-cover shadow-inner"
+              />
+            </div>
+          </motion.div>
+        ) : (
+          <div className="h-40 w-40 rounded-2xl bg-muted flex items-center justify-center shrink-0 mx-auto sm:mx-0">
+             <Package className="h-16 w-16 text-muted-foreground opacity-20" />
           </div>
         )}
-        <div className="flex-1 space-y-2">
-          <h3 className="text-lg font-semibold text-foreground">
-            {product.product_name || "Unknown Product"}
-          </h3>
-          {product.brands && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium">Brand:</span> {product.brands}
-            </p>
+        <div className="flex-1 space-y-4 text-center sm:text-left">
+          <div className="space-y-1">
+            <h3 className="text-3xl font-bold text-foreground tracking-tight leading-tight">
+              {product.product_name || "Unknown Product"}
+            </h3>
+            {product.brands && (
+              <p className="text-md text-muted-foreground font-medium">
+                by <span className="text-primary/80">{product.brands}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Unified Score Summary Pills */}
+          {product.unified_score && (
+            <div className="flex flex-wrap justify-center sm:justify-start gap-3">
+              {product.unified_score.health_score && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/20 border border-border/50 shadow-sm">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Health: {product.unified_score.health_score}</span>
+                </div>
+              )}
+              {product.unified_score.overall_eco_score && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 dark:bg-black/20 border border-border/50 shadow-sm">
+                  <Leaf className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Eco: {product.unified_score.overall_eco_score}</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Nutrition and Eco Score */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Award className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Nutrition Grade</span>
+      {/* Grade Display Grid */}
+      <div className="grid grid-cols-2 gap-4 pt-2">
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="relative overflow-hidden rounded-3xl border border-border/50 bg-white/30 dark:bg-black/20 p-5 shadow-soft group"
+        >
+          <div className="flex flex-col items-center gap-4">
+             <div className="flex items-center gap-2 text-muted-foreground">
+                <Award className="h-4 w-4" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Nutrition Grade</span>
+             </div>
+             <div className={`h-16 w-16 flex items-center justify-center rounded-2xl text-3xl font-black shadow-lg ${getGradeColor(product.nutrition_grade)} transition-transform group-hover:scale-110 duration-300`}>
+                {product.nutrition_grade?.toUpperCase() || "?"}
+             </div>
           </div>
-          <Badge
-            variant="outline"
-            className={`${getGradeColor(product.nutrition_grade)} text-lg font-bold px-4 py-2`}
-          >
-            {product.nutrition_grade?.toUpperCase() || "N/A"}
-          </Badge>
-        </div>
+        </motion.div>
 
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Leaf className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Eco-Score</span>
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="relative overflow-hidden rounded-3xl border border-border/50 bg-white/30 dark:bg-black/20 p-5 shadow-soft group"
+        >
+          <div className="flex flex-col items-center gap-4">
+             <div className="flex items-center gap-2 text-muted-foreground">
+                <Leaf className="h-4 w-4" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Eco Score</span>
+             </div>
+             <div className={`h-16 w-16 flex items-center justify-center rounded-2xl text-3xl font-black shadow-lg ${getGradeColor(product.ecoscore_grade)} transition-transform group-hover:scale-110 duration-300`}>
+                {product.ecoscore_grade?.toUpperCase() || "?"}
+             </div>
           </div>
-          <Badge
-            variant="outline"
-            className={`${getGradeColor(product.ecoscore_grade)} text-lg font-bold px-4 py-2`}
-          >
-            {product.ecoscore_grade?.toUpperCase() || "N/A"}
-          </Badge>
-        </div>
+        </motion.div>
       </div>
 
       {/* Environmental Impact Summary */}
       {product.environmental_impact && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Leaf className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Environmental Impact</span>
-          </div>
-          <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="rounded-3xl border border-border/50 bg-white/30 dark:bg-black/20 p-6 shadow-soft space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Leaf className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Sustainability Analysis</span>
+            </div>
             <ImpactBadge
               level={parseEnvironmentalImpact(product.environmental_impact)}
               type="environment"
             />
-            <p className="text-sm text-muted-foreground mt-2">
-              {product.environmental_impact}
-            </p>
           </div>
-        </div>
-      )}
-
-      {/* Unified Score Summary */}
-      {product.unified_score && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Overall Assessment</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {product.unified_score.health_score && (
-              <Badge variant="outline" className="capitalize">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Health: {product.unified_score.health_score}
-              </Badge>
-            )}
-            {product.unified_score.overall_eco_score && (
-              <Badge variant="outline" className="capitalize">
-                <Leaf className="h-3 w-3 mr-1" />
-                Eco: {product.unified_score.overall_eco_score}
-              </Badge>
-            )}
-          </div>
+          <p className="text-sm text-foreground/80 leading-relaxed italic">
+            "{product.environmental_impact}"
+          </p>
         </div>
       )}
     </div>
@@ -371,9 +395,9 @@ const HarmfulIngredientsSection = ({ product }: { product: ProductData }) => {
       <p className="text-xs text-muted-foreground mb-3">
         Click on each ingredient to see detailed information about why it's harmful and healthier alternatives.
       </p>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {product.harmful_ingredients_details.map((ingredient, index) => (
-          <IngredientExpandable key={`${ingredient.code}-${index}`} ingredient={ingredient} />
+          <IngredientExpandable key={`${ingredient.code}-${index}`} ingredient={ingredient} index={index} />
         ))}
       </div>
     </div>
@@ -505,13 +529,20 @@ const RecommendationSection = ({ product }: { product: ProductData }) => {
  */
 export const ProductCard = ({ product }: ProductCardProps) => {
   return (
-    <Card className="shadow-medium border-border/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <Package className="h-5 w-5 text-primary" />
-          Product Information
-        </CardTitle>
-      </CardHeader>
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      <Card className="shadow-premium border-border/50 glass overflow-hidden rounded-[2.5rem]">
+        <CardHeader className="bg-primary/5 border-b border-border/50 py-6">
+          <CardTitle className="flex items-center gap-3 text-2xl font-bold font-display">
+            <div className="p-2 rounded-xl bg-primary/20 text-primary">
+              <Package className="h-6 w-6" />
+            </div>
+            Product Intelligence
+          </CardTitle>
+        </CardHeader>
       <CardContent className="space-y-6">
         {/* Product Info Summary */}
         <ProductInfoSummary product={product} />
@@ -567,6 +598,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </motion.div>
   );
 };

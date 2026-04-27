@@ -27,7 +27,7 @@ export const SmartLoader = () => {
         <motion.div 
           animate={{ rotate: 360 }} 
           transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-          className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]"
+          className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
         />
         
         {/* Inner pulsing circle */}
@@ -77,6 +77,7 @@ export const SmartLoader = () => {
         {loadingSteps.map((_, idx) => (
           <motion.div
             key={idx}
+            initial={{ backgroundColor: "hsl(var(--muted))" }}
             animate={{ 
               scale: currentStep === idx ? 1.2 : 1,
               opacity: currentStep >= idx ? 1 : 0.3,

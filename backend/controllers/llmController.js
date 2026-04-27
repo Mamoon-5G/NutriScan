@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import fs from "fs";
 
 const FOOD_ANALYSIS_PROMPT = `You are a nutrition analysis expert.
 
@@ -102,6 +103,30 @@ Rules:
 Scanned product metadata:
 `;
 
+const VISION_EXTRACTION_PROMPT = `You are a specialized food data extraction engine.
+You are given images of a food product's packaging (ingredients and nutrition facts).
+Your task is to extract the following information in strict JSON format:
+{
+  "product_name": "Extract or infer product name",
+  "brands": "Extract or infer brand",
+  "ingredients_text": "Full list of ingredients as text",
+  "nutrition_grade": "A, B, C, D, or E based on Nutri-Score standards",
+  "nova_group": 1, 2, 3, or 4 based on processing level,
+  "nutriments": {
+    "energy-kcal_100g": 0,
+    "fat_100g": 0,
+    "saturated-fat_100g": 0,
+    "sugars_100g": 0,
+    "salt_100g": 0,
+    "proteins_100g": 0,
+    "fiber_100g": 0
+  }
+}
+Rules:
+1. Return ONLY the JSON object.
+2. Use null if a specific numeric value cannot be found.
+3. Be as accurate as possible with the ingredients list.`;
+
 const stripCodeFences = (value) => value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
 const parseRecommendationPayload = (text) => {
@@ -145,7 +170,7 @@ export const analyzeFoodWithLLM = async (req, res) => {
       });
     }
 
-    const imageBase64 = req.file.buffer.toString("base64");
+    const imageBase64 = fs.readFileSync(req.file.path).toString("base64");
     const imageDataUrl = `data:${req.file.mimetype};base64,${imageBase64}`;
 
     const client = new OpenAI({
@@ -194,6 +219,59 @@ export const analyzeFoodWithLLM = async (req, res) => {
     return res.status(500).json({
       error: "Failed to analyze image with LLM",
     });
+  }
+};
+
+export const analyzeProductVision = async (req, res) => {
+  try {
+    const files = req.files;
+    if (!files || (!files.ingredients_image && !files.nutrition_image)) {
+      return res.status(400).json({ error: "Missing required images" });
+    }
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "OPENROUTER_API_KEY not configured" });
+    }
+
+    const client = new OpenAI({
+      baseURL: OPENROUTER_BASE_URL,
+      apiKey,
+    });
+
+    const content = [{ type: "text", text: VISION_EXTRACTION_PROMPT }];
+
+    // Add images if they exist
+    if (files.ingredients_image) {
+      const base64 = fs.readFileSync(files.ingredients_image[0].path).toString("base64");
+      content.push({ type: "image_url", image_url: { url: `data:${files.ingredients_image[0].mimetype};base64,${base64}` } });
+    }
+    if (files.nutrition_image) {
+      const base64 = fs.readFileSync(files.nutrition_image[0].path).toString("base64");
+      content.push({ type: "image_url", image_url: { url: `data:${files.nutrition_image[0].mimetype};base64,${base64}` } });
+    }
+
+    const response = await client.chat.completions.create({
+      model: OPENROUTER_VISION_MODEL,
+      messages: [{ role: "user", content }],
+      temperature: 0.1,
+    });
+
+    const resultText = response.choices[0].message.content;
+    const cleaned = stripCodeFences(resultText);
+    const startIdx = cleaned.indexOf("{");
+    const endIdx = cleaned.lastIndexOf("}");
+    
+    if (startIdx === -1 || endIdx === -1) {
+       throw new Error("LLM did not return valid JSON for vision extraction");
+    }
+
+    const productData = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
+
+    return res.json({ productData });
+  } catch (error) {
+    console.error("Vision extraction error:", error);
+    return res.status(500).json({ error: "Failed to extract data from images" });
   }
 };
 

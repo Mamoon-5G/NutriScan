@@ -65,10 +65,9 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3001;
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`✅ EcoScan API running on http://localhost:${PORT}`);
-  });
-}
+console.log("🚀 Server file loaded. Starting listener...");
+app.listen(PORT, () => {
+  console.log(`✅ EcoScan API running on http://localhost:${PORT}`);
+});
 
 export default app;
