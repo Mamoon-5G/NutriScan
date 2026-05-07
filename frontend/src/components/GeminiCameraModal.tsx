@@ -1,11 +1,11 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle, ArrowLeft, RefreshCw, Sparkles, ShieldAlert, Barcode, ArrowRight, HeartPulse } from "lucide-react";
+import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle, ArrowLeft, RefreshCw, Sparkles, ShieldAlert, Barcode, ArrowRight, HeartPulse, Check } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface GeminiCameraModalProps {
+interface AICameraModalProps {
   open: boolean;
   onClose: () => void;
 }
@@ -25,34 +25,43 @@ const dataUrlToBlob = (dataUrl: string): Blob => {
 };
 
 const parseAnalysis = (text: string) => {
-  if (text.trim().toLowerCase() === "invalid" || text.trim().toLowerCase().includes("not a food")) {
+  // 1. Try strict JSON parse
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed.error) return { product: "Error", classification: "Invalid", reason: parsed.error, recommendation: null, hasBarcode: false, breakdown: null };
+    
     return {
-      product: "Not recognized as food",
-      classification: "Invalid",
-      reason: "Please capture a clear photo of a food item.",
-      recommendation: null,
-      hasBarcode: false
+      product: parsed.product || "Identified Product",
+      classification: parsed.classification || "Unknown",
+      reason: parsed.reason || "Analysis complete.",
+      recommendation: parsed.recommendation || null,
+      hasBarcode: !!parsed.has_barcode,
+      breakdown: parsed.breakdown || null
+    };
+  } catch (e) {
+    // 2. Fallback to robust regex
+    const cleanText = text.replace(/\s*(classification|reason|recommendation|healthier alternative):/gi, '\n$1:');
+    
+    const productMatch = cleanText.match(/Product:\s*(.*)/i);
+    const classificationMatch = cleanText.match(/classification:\s*(.*)/i);
+    const reasonMatch = cleanText.match(/reason:\s*([\s\S]*?)(?=\n(?:recommendation|healthier alternative)|$)/i);
+    const recMatch = cleanText.match(/(?:recommendation|healthier alternative):\s*(.*)/i);
+    const barcodeMatch = cleanText.match(/scan barcode/i);
+
+    let product = productMatch ? productMatch[1].trim() : text.split('\n')[0].split(/[Cc]lassification:/)[0].trim();
+    
+    return {
+      product: product || "Product Found",
+      classification: classificationMatch ? classificationMatch[1].trim() : "Unknown",
+      reason: reasonMatch ? reasonMatch[1].trim() : text.replace(/Product:.*?\n/i, '').trim(),
+      recommendation: recMatch ? recMatch[1].trim() : null,
+      hasBarcode: !!barcodeMatch,
+      breakdown: null
     };
   }
-
-  const productMatch = text.match(/Product:\s*(.+)/i);
-  const classMatch = text.match(/classification:\s*(.+)/i);
-  const reasonRawMatch = text.match(/reason:\s*([\s\S]*?)(?=Recommendation:|$)/i);
-  const recMatch = text.match(/Recommendation:\s*(.+)/i);
-  const hasBarcode = /scan.*?barcode/i.test(text);
-
-  let reason = reasonRawMatch ? reasonRawMatch[1].trim() : text;
-  
-  return {
-    product: productMatch ? productMatch[1].trim() : "Unknown Product",
-    classification: classMatch ? classMatch[1].trim() : "Unknown",
-    reason: reason.replace(/scan.*?barcode.*/i, '').trim(),
-    recommendation: recMatch ? recMatch[1].trim() : null,
-    hasBarcode,
-  };
 };
 
-export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => {
+export const AICameraModal = ({ open, onClose }: AICameraModalProps) => {
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -279,10 +288,10 @@ const startCamera = useCallback(async () => {
                      <Sparkles className="h-10 w-10 text-primary relative z-10" />
                    </div>
                 </div>
-                <div className="text-center space-y-4 px-8">
-                    <h3 className="text-2xl font-bold font-display tracking-tight">Gemini Neural Vision</h3>
+                <div className="text-center space-y-3 px-8">
+                    <h3 className="text-2xl font-bold font-display tracking-tight">AI Food Analysis</h3>
                     <p className="text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                      We're identifying the food item and calculating its nutritional classification...
+                      Scanning ingredients and nutritional value...
                     </p>
                 </div>
               </motion.div>
@@ -296,7 +305,7 @@ const startCamera = useCallback(async () => {
                 className="p-6 sm:p-10 space-y-8"
               >
                  {(() => {
-                   const { product, classification, reason, recommendation, hasBarcode } = parseAnalysis(analysisResult);
+                   const { product, classification, reason, recommendation, hasBarcode, breakdown } = parseAnalysis(analysisResult);
                    
                    let bgColor = "bg-primary/10";
                    let borderColor = "border-primary/20";
@@ -328,12 +337,9 @@ const startCamera = useCallback(async () => {
                    return (
                      <div className="space-y-6 w-full max-w-lg mx-auto relative">
                        {/* Background Glow */}
-                       <div 
-                         className="absolute inset-0 -z-10 blur-[80px] rounded-full scale-110 pointer-events-none" 
-                         style={{ background: glowColor }}
-                       />
+                       
 
-                       <div className="bg-card/40 backdrop-blur-xl border border-border/60 rounded-3xl overflow-hidden shadow-2xl relative">
+                       <div className="bg-card border border-border/50 rounded-3xl overflow-hidden shadow-premium relative">
                           <div className={`h-2 w-full ${bgColor}`} style={{ filter: 'brightness(1.5)' }} />
                           <div className="p-8 sm:p-10 flex flex-col items-center text-center space-y-6 relative">
                             <motion.div 
@@ -348,7 +354,7 @@ const startCamera = useCallback(async () => {
                             </motion.div>
                             
                             <div className="space-y-3 w-full">
-                              <h3 className="text-3xl font-black font-display tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/60 leading-tight">
+                              <h3 className="text-3xl font-black font-display tracking-tight text-foreground leading-tight">
                                 {product}
                               </h3>
                               <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] ${bgColor} ${textColor} border ${borderColor} shadow-sm`}>
@@ -356,11 +362,40 @@ const startCamera = useCallback(async () => {
                               </div>
                             </div>
                             
-                            <div className="bg-background/60 border border-border/40 p-5 rounded-2xl w-full text-left">
+                            <div className="bg-muted/30 border border-border/30 p-5 rounded-2xl w-full text-left">
                               <p className="text-[15px] leading-relaxed text-muted-foreground font-medium">
                                 {reason}
                               </p>
                             </div>
+
+                            {breakdown && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                                {breakdown.pros && breakdown.pros.length > 0 && (
+                                  <div className="bg-green-500/5 border border-green-500/10 p-4 rounded-2xl text-left">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-green-600 dark:text-green-400 block mb-2">Key Benefits</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {breakdown.pros.map((pro: string, i: number) => (
+                                        <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-green-500/10 text-green-700 dark:text-green-300 rounded-lg text-[11px] font-bold">
+                                          <Check size={11} className="shrink-0" /> {pro}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {breakdown.cons && breakdown.cons.length > 0 && (
+                                  <div className="bg-red-500/5 border border-red-500/10 p-4 rounded-2xl text-left">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400 block mb-2">Considerations</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {breakdown.cons.map((con: string, i: number) => (
+                                        <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-red-500/10 text-red-700 dark:text-red-300 rounded-lg text-[11px] font-bold">
+                                          <AlertCircle size={11} className="shrink-0" /> {con}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
                             {recommendation && (
                               <div className="w-full bg-primary/5 border border-primary/20 rounded-2xl p-5 text-left flex items-start gap-3">

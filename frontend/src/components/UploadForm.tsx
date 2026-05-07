@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { GeminiCameraModal } from "@/components/GeminiCameraModal";
+import { AICameraModal } from "@/components/GeminiCameraModal";
 
 interface UploadFormProps {
   onBarcodeDetected: (barcode: string) => void;
@@ -243,7 +243,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
       </Card>
 
       {/* AI Camera Modal */}
-      <GeminiCameraModal
+      <AICameraModal
         open={geminiModalOpen}
         onClose={() => {
           setGeminiModalOpen(false);

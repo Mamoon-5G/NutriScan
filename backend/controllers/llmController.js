@@ -4,70 +4,27 @@ import fs from "fs";
 const FOOD_ANALYSIS_PROMPT = `You are a nutrition analysis expert.
 
 Your task is to analyze an image and determine whether the item shown is a food product. 
-If it is a food product, classify its health impact.
+If it is a food product, classify its health impact and return the result in JSON format.
 
-Classification categories:
-- Healthy
-- Moderately Harmful
-- Very Harmful
+Return strict JSON only in this exact format:
+{
+  "product": "Name of the product",
+  "classification": "Healthy | Moderately Harmful | Very Harmful",
+  "reason": "Overall summary sentence",
+  "breakdown": {
+    "pros": ["List 2-3 key positive nutritional factors"],
+    "cons": ["List 2-3 key negative nutritional factors (if any)"]
+  },
+  "recommendation": "Go for <Alternative Product> instead (Optional, only if harmful)",
+  "has_barcode": true/false
+}
 
 Rules:
-1. If the image does NOT contain a food or edible product, respond only with:
-The captured image is not a food product (or any better sentence)
-
-2. If the image contains food, respond in the following format exactly:
-
-Product: <Name of the product identified>
-classification: <Healthy | Moderately Harmful | Harmful>
-reason: <brief explanation of the nutritional concern or benefit>
-
-3. The reason should mention factors such as:
-- high sugar
-- high calories
-- high saturated fat
-- high sodium
-- ultra processed ingredients
-- artificial additives
-- balanced nutrients
-- high fiber
-- natural ingredients
-
-4. Keep the explanation short (1-2 sentences).
-
-5. If the image is a packaged product that may have barcode attached with them in the end just add one more sentence
-<Scan barcode for detailed analysis>
-
-6. Recommend the proper alternate product with name if the classification is either Very Hamrful or Moderaltely Harmful
-
-Examples:
-
-Example 1:
-Product: Name of the product
-classification: Healthy
-reason: Contains natural ingredients, fiber, and balanced nutrients with low added sugar.
-
-Example 2:
-Product: Name of the product
-classification: Moderately Harmful
-reason: Moderate calorie density and added sugar but not excessively processed.
-Recommendation: Go for <Product Names> instead
-
-Example 3:
-Product: Name of the product
-classification: Very Harmful
-reason: Very high sugar and calories with ultra-processed ingredients and additives.
-Recommendation: Go for <Product Names> instead
-
-Example 4:
-Product: Name of the product
-classification: Very Harmful
-reason: Very high sugar and calories with ultra-processed ingredients and additives. Scan the barcode for more detailed analysis
-
-Only output the response in the specified format.
-
-7. Choose exactly one classification from: Healthy, Moderately Harmful, Very Harmful.
-8. Do not include multiple classifications in one response.
-9. Do not add any extra labels, notes, markdown, or explanation outside these lines.`;
+1. If NOT a food product, return: {"error": "The captured image is not a food product"}
+2. Choose classification exactly from: Healthy, Moderately Harmful, Very Harmful.
+3. Breakdown pros/cons should be 1-4 words each (e.g. "High Sugar", "Rich in Fiber").
+4. If it is a packaged product, mention "Scan barcode for detailed analysis" in the reason or set has_barcode to true.
+5. Only output valid JSON. No extra text.`;
 
 
 const OPENROUTER_VISION_MODEL = process.env.OPENROUTER_MODEL || "nvidia/nemotron-nano-12b-v2-vl:free";
@@ -201,7 +158,7 @@ export const analyzeFoodWithLLM = async (req, res) => {
     });
 
     const assistantMessage = apiResponse?.choices?.[0]?.message;
-    const analysis = typeof assistantMessage?.content === "string"
+    const rawAnalysis = typeof assistantMessage?.content === "string"
       ? assistantMessage.content.trim()
       : Array.isArray(assistantMessage?.content)
         ? assistantMessage.content
@@ -211,12 +168,25 @@ export const analyzeFoodWithLLM = async (req, res) => {
           .trim()
         : "";
 
-    if (!analysis) {
+    if (!rawAnalysis) {
       throw new Error("No analysis text returned by LLM");
     }
 
+    // Attempt to clean JSON if the model wrapped it in markdown fences
+    const cleaned = stripCodeFences(rawAnalysis);
+    
+    // Validate if it's JSON, if not, try to structure it
+    let finalAnalysis = cleaned;
+    try {
+      JSON.parse(cleaned);
+      // It's already JSON, good.
+    } catch (e) {
+      // If it's not JSON, it might be the old format. 
+      // We'll leave it as is for the frontend parser to handle fallback.
+    }
+
     return res.json({
-      analysis,
+      analysis: finalAnalysis,
       reasoning_details: assistantMessage?.reasoning_details,
     });
   } catch (error) {
