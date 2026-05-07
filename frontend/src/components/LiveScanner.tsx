@@ -49,7 +49,7 @@ const LiveScanner = ({ onDetected, onClose }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden glass relative text-card-foreground">
+      <div className="w-full max-w-lg rounded-2xl border border-border bg-background shadow-2xl overflow-hidden relative text-foreground">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 relative z-20">
           <div className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-primary" />
@@ -57,7 +57,7 @@ const LiveScanner = ({ onDetected, onClose }: Props) => {
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors p-2 bg-muted/50 rounded-full"
+            className="text-primary hover:bg-primary/20 transition-colors p-2 bg-primary/10 rounded-full"
             aria-label="Close barcode scanner"
           >
             <X className="h-6 w-6" />
@@ -94,7 +94,7 @@ const LiveScanner = ({ onDetected, onClose }: Props) => {
 
           <Button
             onClick={onClose}
-            className="w-full h-14 rounded-xl shadow-premium font-bold text-md"
+            className="w-full h-14 rounded-xl shadow-premium font-bold text-md border-primary/20 text-primary hover:bg-primary/5"
             variant="outline"
           >
             Cancel Scan

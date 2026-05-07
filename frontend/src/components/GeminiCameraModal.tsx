@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
+import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle, ArrowLeft, RefreshCw, Sparkles, ShieldAlert, Barcode, ArrowRight, HeartPulse } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,22 +25,30 @@ const dataUrlToBlob = (dataUrl: string): Blob => {
 };
 
 const parseAnalysis = (text: string) => {
-  if (text.trim().toLowerCase() === "invalid") {
+  if (text.trim().toLowerCase() === "invalid" || text.trim().toLowerCase().includes("not a food")) {
     return {
       product: "Not recognized as food",
       classification: "Invalid",
       reason: "Please capture a clear photo of a food item.",
+      recommendation: null,
+      hasBarcode: false
     };
   }
 
   const productMatch = text.match(/Product:\s*(.+)/i);
   const classMatch = text.match(/classification:\s*(.+)/i);
-  const reasonMatch = text.match(/reason:\s*(.+)/i);
+  const reasonRawMatch = text.match(/reason:\s*([\s\S]*?)(?=Recommendation:|$)/i);
+  const recMatch = text.match(/Recommendation:\s*(.+)/i);
+  const hasBarcode = /scan.*?barcode/i.test(text);
 
+  let reason = reasonRawMatch ? reasonRawMatch[1].trim() : text;
+  
   return {
     product: productMatch ? productMatch[1].trim() : "Unknown Product",
     classification: classMatch ? classMatch[1].trim() : "Unknown",
-    reason: reasonMatch ? reasonMatch[1].trim() : text,
+    reason: reason.replace(/scan.*?barcode.*/i, '').trim(),
+    recommendation: recMatch ? recMatch[1].trim() : null,
+    hasBarcode,
   };
 };
 
@@ -157,20 +165,20 @@ const startCamera = useCallback(async () => {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 sm:p-6"
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
-      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden glass max-h-[94dvh] text-card-foreground">
+      <div className="relative w-full max-w-2xl bg-background rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden max-h-[94dvh] text-foreground">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 relative z-20">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 relative z-20 shrink-0">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-bold font-display tracking-tight">AI Vision Analysis</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="h-10 w-10 p-0 rounded-full bg-muted/50 hover:bg-muted text-muted-foreground">
+          <Button variant="ghost" size="icon" onClick={handleClose} className="h-10 w-10 p-0 rounded-full bg-primary/10 hover:bg-primary/20 text-primary">
             <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Body */}
-        <div className="p-0 overflow-hidden relative">
+        <div className="p-0 overflow-y-auto relative flex-1">
           <AnimatePresence mode="wait">
             {stage === "camera" && (
               <motion.div 
@@ -235,7 +243,7 @@ const startCamera = useCallback(async () => {
                   
                   {!cameraError && (
                     <div className="flex gap-4">
-                      <Button variant="outline" onClick={handleClose} className="flex-1 h-14 rounded-xl border-border text-foreground hover:bg-muted">
+                      <Button variant="outline" onClick={handleClose} className="flex-1 h-14 rounded-xl border-primary/20 text-primary hover:bg-primary/5">
                         Cancel
                       </Button>
                       <Button
@@ -283,59 +291,101 @@ const startCamera = useCallback(async () => {
             {stage === "result" && analysisResult && (
               <motion.div 
                 key="result"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-8 sm:p-12 space-y-8"
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                className="p-6 sm:p-10 space-y-8"
               >
                  {(() => {
-                   const { product, classification, reason } = parseAnalysis(analysisResult);
+                   const { product, classification, reason, recommendation, hasBarcode } = parseAnalysis(analysisResult);
                    
-                   let bgColor = "bg-muted/50";
-                   let borderColor = "border-border";
-                   let textColor = "text-foreground";
+                   let bgColor = "bg-primary/10";
+                   let borderColor = "border-primary/20";
+                   let textColor = "text-primary";
                    let statusIcon = <Zap className="h-6 w-6 text-primary" />;
+                   let glowColor = "rgba(var(--primary), 0.15)";
                    
                    const clsLower = classification.toLowerCase();
                    if (clsLower.includes("healthy")) {
                      bgColor = "bg-green-500/10";
                      borderColor = "border-green-500/30";
                      textColor = "text-green-600 dark:text-green-400";
+                     glowColor = "rgba(34, 197, 94, 0.15)";
                      statusIcon = <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />;
                    } else if (clsLower.includes("moderately")) {
                      bgColor = "bg-yellow-500/10";
                      borderColor = "border-yellow-500/30";
                      textColor = "text-yellow-600 dark:text-yellow-400";
+                     glowColor = "rgba(234, 179, 8, 0.15)";
                      statusIcon = <AlertCircle className="h-10 w-10 text-yellow-600 dark:text-yellow-400" />;
                    } else if (clsLower.includes("harmful") || clsLower.includes("invalid")) {
                      bgColor = "bg-red-500/10";
                      borderColor = "border-red-500/30";
                      textColor = "text-red-600 dark:text-red-400";
-                     statusIcon = <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />;
+                     glowColor = "rgba(239, 68, 68, 0.15)";
+                     statusIcon = <ShieldAlert className="h-10 w-10 text-red-600 dark:text-red-400" />;
                    }
                    
                    return (
-                     <div className="space-y-8">
-                       <div className={`rounded-xl border ${borderColor} ${bgColor} p-8 flex flex-col items-center text-center space-y-6 backdrop-blur-md`}>
-                          <div className="h-20 w-20 rounded-full bg-background flex items-center justify-center border border-border shadow-sm">
-                            {statusIcon}
-                          </div>
-                          <div className="space-y-2">
-                            <h3 className="text-2xl sm:text-3xl font-black font-display tracking-tight">{product}</h3>
-                            <div className={`inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${bgColor} ${textColor} border ${borderColor}`}>
-                              {classification}
+                     <div className="space-y-6 w-full max-w-lg mx-auto relative">
+                       {/* Background Glow */}
+                       <div 
+                         className="absolute inset-0 -z-10 blur-[80px] rounded-full scale-110 pointer-events-none" 
+                         style={{ background: glowColor }}
+                       />
+
+                       <div className="bg-card/40 backdrop-blur-xl border border-border/60 rounded-3xl overflow-hidden shadow-2xl relative">
+                          <div className={`h-2 w-full ${bgColor}`} style={{ filter: 'brightness(1.5)' }} />
+                          <div className="p-8 sm:p-10 flex flex-col items-center text-center space-y-6 relative">
+                            <motion.div 
+                               initial={{ scale: 0.5, opacity: 0 }}
+                               animate={{ scale: 1, opacity: 1 }}
+                               transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                               className={`h-24 w-24 rounded-[2rem] flex items-center justify-center border ${borderColor} ${bgColor} shadow-inner`}
+                            >
+                              <div className="h-16 w-16 bg-background rounded-2xl shadow-sm flex items-center justify-center">
+                                {statusIcon}
+                              </div>
+                            </motion.div>
+                            
+                            <div className="space-y-3 w-full">
+                              <h3 className="text-3xl font-black font-display tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/60 leading-tight">
+                                {product}
+                              </h3>
+                              <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] ${bgColor} ${textColor} border ${borderColor} shadow-sm`}>
+                                <HeartPulse size={14} /> {classification}
+                              </div>
                             </div>
+                            
+                            <div className="bg-background/60 border border-border/40 p-5 rounded-2xl w-full text-left">
+                              <p className="text-[15px] leading-relaxed text-muted-foreground font-medium">
+                                {reason}
+                              </p>
+                            </div>
+
+                            {recommendation && (
+                              <div className="w-full bg-primary/5 border border-primary/20 rounded-2xl p-5 text-left flex items-start gap-3">
+                                <ArrowRight className="text-primary mt-0.5 shrink-0" size={18} />
+                                <div>
+                                  <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-1">Healthier Alternative</span>
+                                  <p className="text-[14px] text-foreground font-medium">{recommendation}</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {hasBarcode && (
+                              <div className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-muted/40 border border-border/50 text-sm text-muted-foreground">
+                                <Barcode size={16} /> Scan barcode for detailed breakdown
+                              </div>
+                            )}
                           </div>
-                          <p className="text-md leading-relaxed max-w-sm text-muted-foreground font-medium">
-                            {reason}
-                          </p>
                        </div>
                        
-                       <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <Button onClick={retake} className="flex-1 h-14 rounded-xl gradient-primary shadow-lg font-bold text-white order-1 sm:order-2">
-                          <RefreshCw className="h-5 w-5 mr-3" /> New Analysis
-                        </Button>
-                        <Button onClick={handleClose} variant="ghost" className="flex-1 h-14 rounded-xl bg-muted/50 hover:bg-muted text-foreground order-2 sm:order-1">
+                       <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                        <Button onClick={handleClose} variant="outline" className="flex-1 h-14 rounded-2xl bg-background hover:bg-muted border-border/60 text-foreground order-2 sm:order-1 font-semibold">
                           Close Dashboard
+                        </Button>
+                        <Button onClick={retake} className="flex-[1.5] h-14 rounded-2xl gradient-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] font-bold text-white order-1 sm:order-2 group">
+                          <RefreshCw className="h-5 w-5 mr-2 group-hover:rotate-180 transition-transform duration-500" /> New Analysis
                         </Button>
                       </div>
                      </div>
@@ -349,4 +399,3 @@ const startCamera = useCallback(async () => {
     </div>
   );
 };
-import { RefreshCw, Sparkles } from "lucide-react";

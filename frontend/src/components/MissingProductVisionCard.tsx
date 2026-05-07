@@ -179,9 +179,9 @@ const capturePhoto = useCallback(() => {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="relative"
     >
-      <Card className="relative overflow-hidden border-border/50 shadow-premium glass bg-card text-card-foreground">
+      <Card className="relative overflow-hidden border-border/50 shadow-premium bg-background text-foreground">
         <div className="absolute top-0 right-0 p-4 z-20">
-           <Button variant="ghost" size="icon" onClick={onCancel} className="text-muted-foreground hover:bg-muted/50 rounded-full">
+           <Button variant="ghost" size="icon" onClick={onCancel} className="text-primary hover:bg-primary/20 rounded-full bg-primary/10">
              <X size={20} />
            </Button>
         </div>
@@ -205,7 +205,7 @@ const capturePhoto = useCallback(() => {
                      Product Not Found
                   </h2>
                   <p className="text-muted-foreground leading-relaxed">
-                    Barcode <span className="font-mono text-foreground font-semibold px-1.5 py-0.5 bg-muted rounded-md">{barcode}</span> was not found.
+                    Barcode <span className="font-mono text-primary font-semibold px-1.5 py-0.5 bg-primary/10 rounded-md">{barcode}</span> was not found.
                   </p>
                 </div>
                 <div className="w-full rounded-xl border border-primary/20 bg-primary/5 p-5 text-left">
@@ -215,7 +215,7 @@ const capturePhoto = useCallback(() => {
                 </div>
 
                 <div className="flex w-full gap-3">
-                  <Button variant="outline" onClick={onCancel} className="flex-1 h-12">
+                  <Button variant="outline" onClick={onCancel} className="flex-1 h-12 border-primary/20 text-primary hover:bg-primary/5">
                     Cancel
                   </Button>
                   <Button onClick={startCamera} className="flex-1 h-12 gradient-primary">
@@ -310,19 +310,19 @@ const capturePhoto = useCallback(() => {
 
                  <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-3">
-                      <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/20 bg-muted/20">
+                      <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/20 bg-primary/5">
                         {images.front && <img src={images.front} alt="Front label" className="w-full h-full object-cover" />}
                       </div>
-                      <Button variant="outline" className="w-full" onClick={() => restartCapture("front")}>
+                      <Button variant="outline" className="w-full border-primary/20 text-primary hover:bg-primary/5" onClick={() => restartCapture("front")}>
                         <RefreshCw className="mr-2 h-4 w-4" /> Retake Front Label
                       </Button>
                     </div>
 
                     <div className="space-y-3">
-                      <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/20 bg-muted/20">
+                      <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/20 bg-primary/5">
                         {images.ingredients && <img src={images.ingredients} alt="Ingredients label" className="w-full h-full object-cover" />}
                       </div>
-                      <Button variant="outline" className="w-full" onClick={() => restartCapture("ingredients")}>
+                      <Button variant="outline" className="w-full border-primary/20 text-primary hover:bg-primary/5" onClick={() => restartCapture("ingredients")}>
                         <RefreshCw className="mr-2 h-4 w-4" /> Retake Ingredients
                       </Button>
                     </div>
