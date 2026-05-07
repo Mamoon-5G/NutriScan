@@ -104,7 +104,10 @@ Scanned product metadata:
 `;
 
 const VISION_EXTRACTION_PROMPT = `You are a specialized food data extraction engine.
-You are given images of a food product's packaging (ingredients and nutrition facts).
+You are given two photos of a packaged food product:
+- Front label image (product name/brand)
+- Ingredients label image
+
 Your task is to extract the following information in strict JSON format:
 {
   "product_name": "Extract or infer product name",
@@ -125,7 +128,9 @@ Your task is to extract the following information in strict JSON format:
 Rules:
 1. Return ONLY the JSON object.
 2. Use null if a specific numeric value cannot be found.
-3. Be as accurate as possible with the ingredients list.`;
+3. Be as accurate as possible with the ingredients list.
+4. Use the front image primarily for product/brand identity.
+5. Use the ingredients image primarily for ingredients extraction.`;
 
 const stripCodeFences = (value) => value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
@@ -225,8 +230,12 @@ export const analyzeFoodWithLLM = async (req, res) => {
 export const analyzeProductVision = async (req, res) => {
   try {
     const files = req.files;
-    if (!files || (!files.ingredients_image && !files.nutrition_image)) {
-      return res.status(400).json({ error: "Missing required images" });
+
+    const frontFile = files?.product_front_image?.[0] || files?.nutrition_image?.[0];
+    const ingredientsFile = files?.ingredients_image?.[0];
+
+    if (!frontFile || !ingredientsFile) {
+      return res.status(400).json({ error: "Please provide both front-label and ingredients photos" });
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -241,15 +250,17 @@ export const analyzeProductVision = async (req, res) => {
 
     const content = [{ type: "text", text: VISION_EXTRACTION_PROMPT }];
 
-    // Add images if they exist
-    if (files.ingredients_image) {
-      const base64 = fs.readFileSync(files.ingredients_image[0].path).toString("base64");
-      content.push({ type: "image_url", image_url: { url: `data:${files.ingredients_image[0].mimetype};base64,${base64}` } });
-    }
-    if (files.nutrition_image) {
-      const base64 = fs.readFileSync(files.nutrition_image[0].path).toString("base64");
-      content.push({ type: "image_url", image_url: { url: `data:${files.nutrition_image[0].mimetype};base64,${base64}` } });
-    }
+    const frontBase64 = fs.readFileSync(frontFile.path).toString("base64");
+    content.push({
+      type: "image_url",
+      image_url: { url: `data:${frontFile.mimetype};base64,${frontBase64}` }
+    });
+
+    const ingredientsBase64 = fs.readFileSync(ingredientsFile.path).toString("base64");
+    content.push({
+      type: "image_url",
+      image_url: { url: `data:${ingredientsFile.mimetype};base64,${ingredientsBase64}` }
+    });
 
     const response = await client.chat.completions.create({
       model: OPENROUTER_VISION_MODEL,
@@ -271,7 +282,7 @@ export const analyzeProductVision = async (req, res) => {
     return res.json({ productData });
   } catch (error) {
     console.error("Vision extraction error:", error);
-    return res.status(500).json({ error: "Failed to extract data from images" });
+    return res.status(500).json({ error: "Failed to extract data from labels" });
   }
 };
 

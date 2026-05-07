@@ -239,7 +239,7 @@ All colors MUST be HSL.
 #camera-reader video,
 #camera-reader img {
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
   object-fit: cover;
 }
 

@@ -138,7 +138,7 @@ const Index = () => {
         ) : (productData || isLoadingProduct) && (
           <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {isLoadingProduct ? (
-              <Card className="shadow-medium border-border/50">
+              <Card className="shadow-medium border-border/50 rounded-2xl">
                 <CardContent>
                   <SmartLoader />
                 </CardContent>

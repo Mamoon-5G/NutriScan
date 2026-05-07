@@ -110,7 +110,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
 
   return (
     <>
-      <Card className="shadow-premium border-border/50 glass overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-top-4 duration-700">
+      <Card className="shadow-premium border-border/50 glass overflow-hidden rounded-2xl animate-in fade-in slide-in-from-top-4 duration-700">
         <CardHeader className="text-center pt-8 pb-2">
           <CardTitle className="text-3xl font-black font-display tracking-tight text-foreground">Scan Product</CardTitle>
           <CardDescription className="text-muted-foreground text-md max-w-xs mx-auto">
@@ -124,7 +124,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
                 type="button"
                 onClick={onOpenCamera}
                 disabled={isLoading}
-                className="flex flex-col items-center justify-center gap-3 h-28 w-full rounded-3xl border-2 border-primary/20 bg-primary/5 text-primary shadow-soft font-bold hover:bg-primary/10 transition-all group"
+                className="flex flex-col items-center justify-center gap-3 h-28 w-full rounded-2xl border-2 border-primary/20 bg-primary/5 text-primary shadow-soft font-bold hover:bg-primary/10 transition-all group"
               >
                 <div className="p-3 rounded-2xl bg-primary text-white group-hover:scale-110 transition-transform">
                   <FiCamera className="h-6 w-6" />
@@ -135,7 +135,7 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
                 type="button"
                 onClick={() => setGeminiModalOpen(true)}
                 disabled={isLoading}
-                className="flex flex-col items-center justify-center gap-3 h-28 w-full rounded-3xl border-2 border-purple-500/20 bg-purple-500/5 text-purple-600 shadow-soft font-bold hover:bg-purple-500/10 transition-all group"
+                className="flex flex-col items-center justify-center gap-3 h-28 w-full rounded-2xl border-2 border-purple-500/20 bg-purple-500/5 text-purple-600 shadow-soft font-bold hover:bg-purple-500/10 transition-all group"
               >
                 <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 text-white group-hover:scale-110 transition-transform">
                   <AiOutlineRobot className="h-6 w-6" />

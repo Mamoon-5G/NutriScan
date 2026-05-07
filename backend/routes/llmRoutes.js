@@ -38,12 +38,14 @@ const upload = multer({
 router.post("/", upload.single("image"), analyzeFoodWithLLM);
 
 /**
- * POST /api/analyze-vision
- * - Accepts multiple images (ingredients and nutrition)
+ * POST /api/analyze-food/vision
+ * - Accepts two images (front label and ingredients)
  * - Returns structured product data
  */
 router.post("/vision", upload.fields([
+  { name: "product_front_image", maxCount: 1 },
   { name: "ingredients_image", maxCount: 1 },
+  // Backward compatibility with old frontend payload name
   { name: "nutrition_image", maxCount: 1 }
 ]), analyzeProductVision);
 

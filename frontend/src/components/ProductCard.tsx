@@ -325,7 +325,7 @@ const ProductInfoSummary = ({ product }: { product: ProductData }) => {
       <div className="grid grid-cols-2 gap-4 pt-2">
         <motion.div 
           whileHover={{ y: -5 }}
-          className="relative overflow-hidden rounded-3xl border border-border/50 bg-white/30 dark:bg-black/20 p-5 shadow-soft group"
+          className="relative overflow-hidden rounded-2xl border border-border/50 bg-white/30 dark:bg-black/20 p-5 shadow-soft group"
         >
           <div className="flex flex-col items-center gap-4">
              <div className="flex items-center gap-2 text-muted-foreground">
@@ -340,7 +340,7 @@ const ProductInfoSummary = ({ product }: { product: ProductData }) => {
 
         <motion.div 
           whileHover={{ y: -5 }}
-          className="relative overflow-hidden rounded-3xl border border-border/50 bg-white/30 dark:bg-black/20 p-5 shadow-soft group"
+          className="relative overflow-hidden rounded-2xl border border-border/50 bg-white/30 dark:bg-black/20 p-5 shadow-soft group"
         >
           <div className="flex flex-col items-center gap-4">
              <div className="flex items-center gap-2 text-muted-foreground">
@@ -356,7 +356,7 @@ const ProductInfoSummary = ({ product }: { product: ProductData }) => {
 
       {/* Environmental Impact Summary */}
       {product.environmental_impact && (
-        <div className="rounded-3xl border border-border/50 bg-white/30 dark:bg-black/20 p-6 shadow-soft space-y-4">
+        <div className="rounded-2xl border border-border/50 bg-white/30 dark:bg-black/20 p-6 shadow-soft space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Leaf className="h-4 w-4" />
@@ -534,7 +534,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <Card className="shadow-premium border-border/50 glass overflow-hidden rounded-[2.5rem]">
+      <Card className="shadow-premium border-border/50 glass overflow-hidden rounded-2xl">
         <CardHeader className="bg-primary/5 border-b border-border/50 py-6">
           <CardTitle className="flex items-center gap-3 text-2xl font-bold font-display">
             <div className="p-2 rounded-xl bg-primary/20 text-primary">

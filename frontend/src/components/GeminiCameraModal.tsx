@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface GeminiCameraModalProps {
   open: boolean;
@@ -60,20 +61,32 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
     }
   }, []);
 
-  const startCamera = useCallback(async () => {
+const startCamera = useCallback(async () => {
     setCameraError(null);
     try {
+      if (streamRef.current) {
+        stopCamera();
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { 
+          facingMode: "environment", 
+          width: { ideal: 1920 }, 
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 1 } 
+        },
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(e => console.error("Video play error:", e));
+        };
       }
-    } catch {
+    } catch (err) {
+      console.error("Camera access error:", err);
       setCameraError("Could not access camera. Please allow camera permission and try again.");
     }
-  }, []);
+  }, [stopCamera]);
 
   useEffect(() => {
     if (open) {
@@ -141,131 +154,199 @@ export const GeminiCameraModal = ({ open, onClose }: GeminiCameraModalProps) => 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 sm:p-6"
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
-      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden max-h-[94dvh]">
+      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden glass max-h-[94dvh] text-card-foreground">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-border">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 relative z-20">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
-            <h2 className="text-base sm:text-lg font-semibold">AI Food Analyzer</h2>
+            <h2 className="text-xl font-bold font-display tracking-tight">AI Vision Analysis</h2>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleClose} className="h-8 w-8 p-0 rounded-full">
-            <X className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={handleClose} className="h-10 w-10 p-0 rounded-full bg-muted/50 hover:bg-muted text-muted-foreground">
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Body */}
-        <div className="p-3 sm:p-5 space-y-4 overflow-y-auto max-h-[calc(94dvh-4rem)]">
-          {stage === "camera" && (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground text-center">
-                Point camera at a food item and capture a photo for AI analysis
-              </p>
-              {cameraError ? (
-                <div className="flex flex-col items-center justify-center h-[min(52dvh,420px)] rounded-xl bg-muted/50 gap-3 border border-dashed border-border">
-                  <AlertCircle className="h-10 w-10 text-destructive" />
-                  <p className="text-sm text-muted-foreground text-center px-4">{cameraError}</p>
-                  <Button variant="outline" size="sm" onClick={startCamera} className="min-h-11 px-4">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Retry Camera
-                  </Button>
-                </div>
-              ) : (
-                <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] h-[min(52dvh,420px)] sm:h-[min(56dvh,520px)] flex items-center justify-center">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Viewfinder overlay */}
-                  <div className="absolute inset-4 border-2 border-white/40 rounded-lg pointer-events-none" />
-                </div>
-              )}
-              <canvas ref={canvasRef} className="hidden" />
-              {!cameraError && (
-                <Button
-                  onClick={capturePhoto}
-                  className="w-full gradient-primary shadow-soft font-semibold min-h-11"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Capture Photo
-                </Button>
-              )}
-            </div>
-          )}
-
-          {stage === "analyzing" && (
-            <div className="flex flex-col items-center justify-center py-10 sm:py-16 space-y-4 min-h-[240px]">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full blur-xl bg-primary/20 animate-pulse" />
-                <Loader2 className="h-12 w-12 text-primary animate-spin relative z-10" />
-              </div>
-              <p className="text-lg font-medium animate-pulse">Analyzing with AI...</p>
-              <p className="text-sm text-muted-foreground">Identifying food and health impact</p>
-            </div>
-          )}
-
-          {stage === "result" && analysisResult && (
-            <div className="space-y-4">
-               {(() => {
-                 const { product, classification, reason } = parseAnalysis(analysisResult);
-                 
-                 let bgColor = "bg-muted/30";
-                 let borderColor = "border-border";
-                 let textColor = "text-foreground";
-                 let icon = <Zap className="h-6 w-6 text-primary" />;
-                 
-                 const clsLower = classification.toLowerCase();
-                 if (clsLower.includes("healthy")) {
-                   bgColor = "bg-green-500/10";
-                   borderColor = "border-green-500/30";
-                   textColor = "text-green-600 dark:text-green-400";
-                   icon = <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" /></div>;
-                 } else if (clsLower.includes("moderately")) {
-                   bgColor = "bg-yellow-500/10";
-                   borderColor = "border-yellow-500/30";
-                   textColor = "text-yellow-600 dark:text-yellow-400";
-                   icon = <div className="h-12 w-12 rounded-full bg-yellow-500/20 flex items-center justify-center"><AlertCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" /></div>;
-                 } else if (clsLower.includes("harmful") || clsLower.includes("invalid")) {
-                   bgColor = "bg-red-500/10";
-                   borderColor = "border-red-500/30";
-                   textColor = "text-red-600 dark:text-red-400";
-                   icon = <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center"><AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" /></div>;
-                 }
-                 
-                 return (
-                   <div className={`rounded-xl border ${borderColor} ${bgColor} p-4 sm:p-6 flex flex-col items-center text-center space-y-4 transition-all duration-500 animate-in fade-in zoom-in-95`}>
-                      {icon}
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-bold break-words">{product}</h3>
-                        <p className={`text-sm font-bold mt-1 uppercase tracking-wider ${textColor}`}>
-                          {classification}
-                        </p>
+        <div className="p-0 overflow-hidden relative">
+          <AnimatePresence mode="wait">
+            {stage === "camera" && (
+              <motion.div 
+                key="camera"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col"
+              >
+                <div className="relative w-full aspect-square sm:aspect-video bg-black flex items-center justify-center overflow-hidden">
+                  {cameraError ? (
+                    <div className="flex flex-col items-center justify-center p-8 gap-4 text-center">
+                      <AlertCircle className="h-12 w-12 text-destructive" />
+                      <p className="text-white/80 font-medium">{cameraError}</p>
+                      <Button variant="outline" onClick={startCamera} className="border-white/20 text-white">
+                        Retry Camera
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-cover"
+                      />
+                      
+                      {/* Premium Scifi Overlay */}
+                      <div className="absolute inset-0 pointer-events-none z-10">
+                        {/* Corners */}
+                        <div className="absolute top-8 left-8 w-12 h-12 border-t-4 border-l-4 border-primary rounded-tl-lg shadow-[0_0_15px_rgba(var(--primary),0.5)]"></div>
+                        <div className="absolute top-8 right-8 w-12 h-12 border-t-4 border-r-4 border-primary rounded-tr-lg shadow-[0_0_15px_rgba(var(--primary),0.5)]"></div>
+                        <div className="absolute bottom-8 left-8 w-12 h-12 border-b-4 border-l-4 border-primary rounded-bl-lg shadow-[0_0_15px_rgba(var(--primary),0.5)]"></div>
+                        <div className="absolute bottom-8 right-8 w-12 h-12 border-b-4 border-r-4 border-primary rounded-br-lg shadow-[0_0_15px_rgba(var(--primary),0.5)]"></div>
+                        
+                        {/* Animated Scanning Line */}
+                        <motion.div 
+                          animate={{ top: ["15%", "85%", "15%"] }}
+                          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                          className="absolute left-8 right-8 h-[3px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_25px_hsl(var(--primary))]"
+                        />
+                        
+                        {/* Grid overlay */}
+                        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(var(--primary),0.2)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--primary),0.2)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+                        
+                        <div className="absolute top-6 left-1/2 -translate-x-1/2">
+                          <p className="bg-black/60 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-white/10">
+                            Neural Processing Active
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-sm leading-relaxed max-w-sm text-muted-foreground font-medium">
-                        {reason}
-                      </p>
+                    </>
+                  )}
+                </div>
+                
+                <div className="p-6 bg-gradient-to-b from-transparent to-muted/20 flex flex-col gap-4">
+                  <div className="flex items-center justify-between text-muted-foreground text-xs px-2">
+                    <span className="flex items-center gap-1.5"><Zap size={12} className="text-primary" /> AI Recognition</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle size={12} className="text-primary" /> High Confidence</span>
+                  </div>
+                  
+                  {!cameraError && (
+                    <div className="flex gap-4">
+                      <Button variant="outline" onClick={handleClose} className="flex-1 h-14 rounded-xl border-border text-foreground hover:bg-muted">
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={capturePhoto}
+                        className="flex-[2] h-14 rounded-xl gradient-primary shadow-lg font-bold text-md gap-3"
+                      >
+                        <Camera className="h-6 w-6" /> Capture & Analyze
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <canvas ref={canvasRef} className="hidden" />
+              </motion.div>
+            )}
+
+            {stage === "analyzing" && (
+              <motion.div 
+                key="analyzing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-20 sm:py-32 space-y-10"
+              >
+                <div className="relative h-40 w-40 flex items-center justify-center">
+                   <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 rounded-full border-[3px] border-dashed border-primary/30"
+                   />
+                   <div className="absolute inset-2 rounded-full border-[4px] border-transparent border-t-primary animate-spin" style={{ animationDuration: '1.2s' }}></div>
+                   <div className="h-24 w-24 bg-primary/10 rounded-xl flex items-center justify-center shadow-inner relative overflow-hidden">
+                     <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent animate-pulse" />
+                     <Sparkles className="h-10 w-10 text-primary relative z-10" />
                    </div>
-                 );
-               })()}
-               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button onClick={retake} className="w-full gradient-primary shadow-soft font-semibold text-white hover:opacity-90 transition-opacity min-h-11">
-                  <Camera className="h-4 w-4 mr-2" />
-                  {analysisResult.toLowerCase().includes("invalid") ? "Try Again" : "Analyze Another Food"}
-                </Button>
-                <Button onClick={handleClose} variant="outline" className="w-full min-h-11">
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
+                </div>
+                <div className="text-center space-y-4 px-8">
+                    <h3 className="text-2xl font-bold font-display tracking-tight">Gemini Neural Vision</h3>
+                    <p className="text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                      We're identifying the food item and calculating its nutritional classification...
+                    </p>
+                </div>
+              </motion.div>
+            )}
+
+            {stage === "result" && analysisResult && (
+              <motion.div 
+                key="result"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-8 sm:p-12 space-y-8"
+              >
+                 {(() => {
+                   const { product, classification, reason } = parseAnalysis(analysisResult);
+                   
+                   let bgColor = "bg-muted/50";
+                   let borderColor = "border-border";
+                   let textColor = "text-foreground";
+                   let statusIcon = <Zap className="h-6 w-6 text-primary" />;
+                   
+                   const clsLower = classification.toLowerCase();
+                   if (clsLower.includes("healthy")) {
+                     bgColor = "bg-green-500/10";
+                     borderColor = "border-green-500/30";
+                     textColor = "text-green-600 dark:text-green-400";
+                     statusIcon = <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />;
+                   } else if (clsLower.includes("moderately")) {
+                     bgColor = "bg-yellow-500/10";
+                     borderColor = "border-yellow-500/30";
+                     textColor = "text-yellow-600 dark:text-yellow-400";
+                     statusIcon = <AlertCircle className="h-10 w-10 text-yellow-600 dark:text-yellow-400" />;
+                   } else if (clsLower.includes("harmful") || clsLower.includes("invalid")) {
+                     bgColor = "bg-red-500/10";
+                     borderColor = "border-red-500/30";
+                     textColor = "text-red-600 dark:text-red-400";
+                     statusIcon = <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />;
+                   }
+                   
+                   return (
+                     <div className="space-y-8">
+                       <div className={`rounded-xl border ${borderColor} ${bgColor} p-8 flex flex-col items-center text-center space-y-6 backdrop-blur-md`}>
+                          <div className="h-20 w-20 rounded-full bg-background flex items-center justify-center border border-border shadow-sm">
+                            {statusIcon}
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="text-2xl sm:text-3xl font-black font-display tracking-tight">{product}</h3>
+                            <div className={`inline-block px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${bgColor} ${textColor} border ${borderColor}`}>
+                              {classification}
+                            </div>
+                          </div>
+                          <p className="text-md leading-relaxed max-w-sm text-muted-foreground font-medium">
+                            {reason}
+                          </p>
+                       </div>
+                       
+                       <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                        <Button onClick={retake} className="flex-1 h-14 rounded-xl gradient-primary shadow-lg font-bold text-white order-1 sm:order-2">
+                          <RefreshCw className="h-5 w-5 mr-3" /> New Analysis
+                        </Button>
+                        <Button onClick={handleClose} variant="ghost" className="flex-1 h-14 rounded-xl bg-muted/50 hover:bg-muted text-foreground order-2 sm:order-1">
+                          Close Dashboard
+                        </Button>
+                      </div>
+                     </div>
+                   );
+                 })()}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
   );
 };
+import { RefreshCw, Sparkles } from "lucide-react";
