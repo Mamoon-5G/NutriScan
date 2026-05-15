@@ -68,10 +68,13 @@ const Index = () => {
     } catch (error: any) {
       console.error("Error fetching product:", error);
       
-      // Handle the missing product 404 edge-case
-      if (error.response?.status === 404) {
+      // Handle missing product or API failure (fallback to vision extraction)
+      if (error.response?.status === 404 || error.response?.status >= 500) {
         setMissingBarcode(barcode);
         setProductData(null);
+        if (error.response?.status >= 500) {
+          toast.warning("Open Food Facts API is down. Falling back to AI Vision.");
+        }
       } else {
         const errorMessage = error.response?.data?.error || "Failed to load product details. Please check the barcode and try again.";
         toast.error(errorMessage);

@@ -61,33 +61,36 @@ Scanned product metadata:
 `;
 
 const VISION_EXTRACTION_PROMPT = `You are a specialized food data extraction engine.
-You are given two photos of a packaged food product:
-- Front label image (product name/brand)
+You are given two photos:
+- Front label image
 - Ingredients label image
 
-Your task is to extract the following information in strict JSON format:
+Your task is to verify if these images actually show a food product and its ingredients.
+If they do NOT show a valid packaged food product or ingredients list, you MUST return strict JSON only in this exact format:
+{
+  "error": "The captured image is not a valid food product or ingredients label."
+}
+
+If they DO show a valid food product, extract the following information in strict JSON format:
 {
   "product_name": "Extract or infer product name",
   "brands": "Extract or infer brand",
-  "ingredients_text": "Full list of ingredients as text",
   "nutrition_grade": "A, B, C, D, or E based on Nutri-Score standards",
-  "nova_group": 1, 2, 3, or 4 based on processing level,
-  "nutriments": {
-    "energy-kcal_100g": 0,
-    "fat_100g": 0,
-    "saturated-fat_100g": 0,
-    "sugars_100g": 0,
-    "salt_100g": 0,
-    "proteins_100g": 0,
-    "fiber_100g": 0
-  }
+  "ingredients_text": "Full list of ingredients as text",
+  "conclusion": "Healthy | Moderately Harmful | Very Harmful",
+  "harmful_ingredients": [
+    {
+      "name": "Ingredient Name",
+      "health_impact": "Explain in what ways it is harmful and its breakdown",
+      "environment_impact": "Explain its impact on the environment"
+    }
+  ]
 }
 Rules:
 1. Return ONLY the JSON object.
-2. Use null if a specific numeric value cannot be found.
-3. Be as accurate as possible with the ingredients list.
-4. Use the front image primarily for product/brand identity.
-5. Use the ingredients image primarily for ingredients extraction.`;
+2. Be as accurate as possible with the ingredients list.
+3. Assess the product and choose a conclusion exactly from: Healthy, Moderately Harmful, Very Harmful.
+4. For each harmful ingredient found, provide its details in the harmful_ingredients array. If none, return an empty array.`;
 
 const stripCodeFences = (value) => value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
@@ -248,6 +251,10 @@ export const analyzeProductVision = async (req, res) => {
     }
 
     const productData = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
+
+    if (productData.error) {
+      return res.status(400).json({ error: productData.error });
+    }
 
     return res.json({ productData });
   } catch (error) {

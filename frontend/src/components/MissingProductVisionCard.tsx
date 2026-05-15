@@ -12,7 +12,7 @@ interface MissingProductVisionCardProps {
   onCancel: () => void;
 }
 
-type FlowStep = "intro" | "camera" | "preview" | "analyzing";
+type FlowStep = "intro" | "camera" | "preview" | "analyzing" | "results" | "error";
 type CaptureStep = "front" | "ingredients";
 
 export const MissingProductVisionCard = ({
@@ -27,6 +27,8 @@ export const MissingProductVisionCard = ({
     ingredients: null,
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [resultData, setResultData] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -157,10 +159,13 @@ const capturePhoto = useCallback(() => {
       });
       
       toast.success("AI analysis complete!");
-      onDataGenerated(response.data.productData);
+      setResultData(response.data.productData);
+      setStep("results");
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "Analysis failed. Please try again.");
-      setStep("preview");
+      const msg = error.response?.data?.error || "Analysis failed. Please try again.";
+      toast.error(msg);
+      setErrorMsg(msg);
+      setStep("error");
     } finally {
       setIsAnalyzing(false);
     }
@@ -371,6 +376,96 @@ const capturePhoto = useCallback(() => {
                     <p className="text-muted-foreground max-w-xs mx-auto leading-relaxed">
                       We're deciphering the ingredients list and cross-referencing with our global nutritional database...
                     </p>
+                 </div>
+              </motion.div>
+            )}
+
+            {step === "error" && (
+              <motion.div 
+                key="error"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-6"
+              >
+                <div className="h-20 w-20 bg-destructive/10 text-destructive flex items-center justify-center rounded-2xl shadow-inner relative">
+                  <X className="h-10 w-10 relative z-10" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold font-display tracking-tight text-foreground">Analysis Failed</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    {errorMsg}
+                  </p>
+                </div>
+                <div className="flex flex-col w-full gap-3 pt-4 sm:flex-row sm:max-w-md mx-auto">
+                  <Button variant="outline" onClick={() => setStep("preview")} className="flex-1 h-12 border-primary/20 text-primary hover:bg-primary/5">
+                    <RefreshCw className="mr-2 h-4 w-4" /> Retry Analysis
+                  </Button>
+                  <Button onClick={() => setStep("intro")} className="flex-1 h-12 gradient-primary">
+                    <Camera className="mr-2 h-4 w-4" /> Retake Photos
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === "results" && resultData && (
+              <motion.div 
+                key="results"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col space-y-6 p-6 sm:p-8"
+              >
+                 <div className="space-y-2">
+                   <h3 className="text-2xl font-bold font-display tracking-tight text-foreground">{resultData.product_name || "Unknown Product"}</h3>
+                   {resultData.brands && <p className="text-muted-foreground text-sm font-medium">by <span className="text-primary">{resultData.brands}</span></p>}
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-border/50 bg-primary/5 p-4 flex flex-col items-center justify-center text-center">
+                      <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Nutrition Grade</span>
+                      <span className="text-3xl font-black text-primary">{resultData.nutrition_grade?.toUpperCase() || "?"}</span>
+                    </div>
+                    <div className="rounded-xl border border-border/50 bg-primary/5 p-4 flex flex-col items-center justify-center text-center">
+                      <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Conclusion</span>
+                      <span className="text-lg font-bold text-foreground">{resultData.conclusion || "Unknown"}</span>
+                    </div>
+                 </div>
+
+                 {resultData.ingredients_text && (
+                   <div className="space-y-2">
+                     <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Ingredients List</h4>
+                     <p className="text-sm text-foreground/90 bg-muted/30 p-4 rounded-xl border border-border/50">
+                       {resultData.ingredients_text}
+                     </p>
+                   </div>
+                 )}
+
+                 {resultData.harmful_ingredients && resultData.harmful_ingredients.length > 0 && (
+                   <div className="space-y-4">
+                     <h4 className="text-sm font-bold uppercase tracking-widest text-destructive">Harmful Ingredients Breakdown</h4>
+                     <div className="space-y-3">
+                       {resultData.harmful_ingredients.map((ing: any, idx: number) => (
+                         <div key={idx} className="border border-destructive/20 rounded-xl bg-destructive/5 p-4 space-y-3">
+                           <h5 className="font-bold text-destructive text-base">{ing.name}</h5>
+                           
+                           <div className="space-y-1">
+                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Why It's Harmful</span>
+                             <p className="text-sm text-foreground">{ing.health_impact}</p>
+                           </div>
+                           
+                           <div className="space-y-1">
+                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Environmental Impact</span>
+                             <p className="text-sm text-foreground">{ing.environment_impact}</p>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+
+                 <div className="pt-4 flex w-full">
+                   <Button className="w-full h-12 rounded-xl gradient-primary" onClick={onCancel}>
+                     <CheckCircle2 className="w-5 h-5 mr-2" /> Done
+                   </Button>
                  </div>
               </motion.div>
             )}
