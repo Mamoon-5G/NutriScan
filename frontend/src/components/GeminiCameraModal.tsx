@@ -3,6 +3,7 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Loader2, Camera, X, Zap, AlertCircle, CheckCircle, ArrowLeft, RefreshCw, Sparkles, ShieldAlert, Barcode, ArrowRight, HeartPulse, Check } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AICameraModalProps {
@@ -96,11 +97,11 @@ const startCamera = useCallback(async () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(e => console.error("Video play error:", e));
+          videoRef.current?.play().catch(e => logger.error("Video play error:", e));
         };
       }
     } catch (err) {
-      console.error("Camera access error:", err);
+      logger.error("Camera access error:", err);
       setCameraError("Could not access camera. Please allow camera permission and try again.");
     }
   }, [stopCamera]);

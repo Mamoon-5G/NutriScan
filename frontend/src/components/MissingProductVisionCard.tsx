@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Camera, RefreshCw, X, Sparkles, Database, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -69,13 +70,13 @@ export const MissingProductVisionCard = ({
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
             if (mountedRef.current && videoRef.current) {
-              videoRef.current.play().catch((e) => console.error("Error playing video:", e));
+              videoRef.current.play().catch((e) => logger.error("Error playing video:", e));
             }
           };
         }
       }, 100);
     } catch (err) {
-      console.error("Camera error:", err);
+      logger.error("Camera error:", err);
       toast.error("Could not access camera. Please allow permissions.");
     }
   }, []);
@@ -161,8 +162,13 @@ const capturePhoto = useCallback(() => {
       toast.success("AI analysis complete!");
       setResultData(response.data.productData);
       setStep("results");
-    } catch (error: any) {
-      const msg = error.response?.data?.error || "Analysis failed. Please try again.";
+    } catch (error: unknown) {
+      let msg = "Analysis failed. Please try again.";
+      if (axios.isAxiosError(error)) {
+        msg = error.response?.data?.error || msg;
+      } else if (error instanceof Error) {
+        msg = error.message;
+      }
       toast.error(msg);
       setErrorMsg(msg);
       setStep("error");
@@ -475,4 +481,3 @@ const capturePhoto = useCallback(() => {
     </motion.div>
   );
 };
-

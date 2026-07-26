@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Leaf, AlertCircle, CheckCircle } from "lucide-react";
-import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import { getProductDetails } from "@/lib/api";
 import { UploadForm } from "@/components/UploadForm";
 import { ProductCard } from "@/components/ProductCard";
 import { MLAssessmentCard } from "@/components/MLAssessmentCard";
@@ -9,41 +10,15 @@ import { MissingProductVisionCard } from "@/components/MissingProductVisionCard"
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import LiveScanner from "@/components/LiveScanner";
+import { logger } from "@/lib/logger";
 
-interface UnifiedScore {
-  overall_eco_score: 'High' | 'Moderate' | 'Low';
-  health_score: 'High' | 'Moderate' | 'Low';
-  confidence: number;
-}
-
-interface ProductData {
-  product_name?: string;
-  brands?: string;
-  image_url?: string;
-  nutrition_grade?: string;
-  ecoscore_grade?: string;
-  ingredients_text?: string;
-  harmful_ingredients?: string[];
-  allergens?: string;
-  nova_group?: number;
-  rule_based_health_label?: number;
-  ml_health_label?: number | string;
-  environmental_impact?: string;
-  labels?: {
-    health_label?: number;
-    eco_label?: number;
-  };
-  ml_features?: Record<string, number>;
-  unified_score?: UnifiedScore;
-}
+import type { ProductData } from "@/types/product";
 
 const Index = () => {
-  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+  const [activeBarcode, setActiveBarcode] = useState<string | null>(null);
   const [productData, setProductData] = useState<ProductData | null>(null);
-  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [missingBarcode, setMissingBarcode] = useState<string | null>(null);
 
   // Clear error when product changes
@@ -54,35 +29,52 @@ const Index = () => {
     }
   }, [productData]);
 
-  // Fetch product details from API
-  const fetchProductDetails = async (barcode: string) => {
-    setIsLoadingProduct(true);
-    setError(null);
-    setMissingBarcode(null);
+  // Fetch product details via React Query
+  const { data: queryData, isFetching: isLoadingProduct, error: queryError, isError, refetch } = useQuery<ProductData, any>({
+    queryKey: ["product", activeBarcode],
+    queryFn: () => getProductDetails(activeBarcode!),
+    enabled: !!activeBarcode,
+    retry: 1,
+    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
+  });
 
-    try {
-      const { data } = await axios.get(`${apiBaseUrl}/api/product/${barcode}`);
-      setProductData(data);
-      // We no longer call `await analyzeProduct(data)` because the backend returns all ML features, scores, and details directly in `data` !
+  // Handle successful data fetch
+  useEffect(() => {
+    if (queryData) {
+      setProductData(queryData);
       toast.success("Product loaded successfully!");
-    } catch (error: any) {
-      console.error("Error fetching product:", error);
+    }
+  }, [queryData]);
+
+  // Handle errors
+  useEffect(() => {
+    if (isError && queryError && activeBarcode) {
+      logger.error("Error fetching product:", queryError);
       
       // Handle missing product or API failure (fallback to vision extraction)
-      if (error.response?.status === 404 || error.response?.status >= 500) {
-        setMissingBarcode(barcode);
+      if (queryError.response?.status === 404 || queryError.response?.status >= 500) {
+        setMissingBarcode(activeBarcode);
         setProductData(null);
-        if (error.response?.status >= 500) {
+        if (queryError.response?.status >= 500) {
           toast.warning("Open Food Facts API is down. Falling back to AI Vision.");
         }
       } else {
-        const errorMessage = error.response?.data?.error || "Failed to load product details. Please check the barcode and try again.";
+        const errorMessage = queryError.response?.data?.error || "Failed to load product details. Please check the barcode and try again.";
         toast.error(errorMessage);
         setError(errorMessage);
         setProductData(null);
       }
-    } finally {
-      setIsLoadingProduct(false);
+    }
+  }, [isError, queryError, activeBarcode]);
+
+  const fetchProductDetails = (barcode: string) => {
+    setError(null);
+    setMissingBarcode(null);
+    setProductData(null);
+    if (barcode === activeBarcode) {
+      refetch();
+    } else {
+      setActiveBarcode(barcode);
     }
   };
 
@@ -97,6 +89,7 @@ const Index = () => {
 
   // Reset current view
   const handleReset = () => {
+    setActiveBarcode(null);
     setProductData(null);
     setError(null);
   };

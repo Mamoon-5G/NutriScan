@@ -8,8 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { BrowserMultiFormatReader } from "@zxing/browser";
 import { AICameraModal } from "@/components/GeminiCameraModal";
+import { logger } from "@/lib/logger";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface UploadFormProps {
   onBarcodeDetected: (barcode: string) => void;
@@ -17,12 +27,21 @@ interface UploadFormProps {
   onOpenCamera: () => void;
 }
 
+const barcodeSchema = z.object({
+  barcode: z.string().regex(/^\d{8,13}$/, "Please enter a valid barcode (8-13 digits)"),
+});
+type BarcodeFormValues = z.infer<typeof barcodeSchema>;
+
 export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: UploadFormProps) => {
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
-  const [manualBarcode, setManualBarcode] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [geminiModalOpen, setGeminiModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm<BarcodeFormValues>({
+    resolver: zodResolver(barcodeSchema),
+    defaultValues: { barcode: "" },
+  });
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,7 +60,8 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
     setUploadingImage(true);
 
     try {
-      // Try to detect barcode on client side first
+      // Try to detect barcode on client side first (Dynamically load zxing)
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
       const reader = new BrowserMultiFormatReader();
       const img = new Image();
       img.src = URL.createObjectURL(file);
@@ -51,14 +71,14 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
       });
       const result = reader.decodeFromImageElement(img);
       const barcode = (await result).getText();
-      console.log("Barcode detected on client:", barcode);
+      logger.info("Barcode detected on client:", barcode);
       toast.success("Barcode detected successfully!");
       onBarcodeDetected(barcode);
       setUploadingImage(false);
       event.target.value = "";
       return;
     } catch (zxingError) {
-      console.warn("Client-side barcode detection failed:", zxingError);
+      logger.warn("Client-side barcode detection failed:", zxingError);
       // If no barcode found, fall back to server
     }
 
@@ -72,12 +92,12 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
       if (data.barcode) {
         toast.success("Barcode detected successfully!");
         onBarcodeDetected(data.barcode);
-        setManualBarcode("");
+        form.reset();
       } else {
         toast.error("No barcode detected in the image. Please try again or enter manually.");
       }
-    } catch (error: any) {
-      console.error("Error uploading image:", error);
+    } catch (error: unknown) {
+      logger.error("Error uploading image:", error);
       toast.error("Failed to process image. Please try manual entry.");
     } finally {
       setUploadingImage(false);
@@ -87,25 +107,13 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
     }
   };
 
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!manualBarcode.trim()) {
-      toast.error("Please enter a barcode");
-      return;
-    }
-
-    if (!/^\d{8,13}$/.test(manualBarcode.trim())) {
-      toast.error("Please enter a valid barcode (8-13 digits)");
-      return;
-    }
-
-    onBarcodeDetected(manualBarcode.trim());
+  const onSubmit = (data: BarcodeFormValues) => {
+    onBarcodeDetected(data.barcode);
   };
 
   // Clear barcode input when loading state changes
   const handleClearBarcode = () => {
-    setManualBarcode("");
+    form.reset();
   };
 
   return (
@@ -199,46 +207,59 @@ export const UploadForm = ({ onBarcodeDetected, isLoading, onOpenCamera }: Uploa
           </div>
 
           {/* Manual Barcode Entry */}
-          <form onSubmit={handleManualSubmit} className="space-y-4 animate-in fade-in duration-500">
-            <div className="space-y-2">
-              <Label htmlFor="manual-barcode" className="text-sm font-medium">
-                Enter Barcode Manually
-              </Label>
-              <div className="flex gap-2 flex-col sm:flex-row">
-                <div className="relative flex-1">
-                  <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="manual-barcode"
-                    type="text"
-                    placeholder="e.g., 3017620422003"
-                    value={manualBarcode}
-                    onChange={(e) => setManualBarcode(e.target.value.replace(/\D/g, ""))}
-                    disabled={isLoading || uploadingImage}
-                    className="pl-9 w-full"
-                    maxLength={13}
-                    aria-label="Enter barcode manually"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 animate-in fade-in duration-500">
+              <div className="space-y-2">
+                <Label htmlFor="manual-barcode" className="text-sm font-medium">
+                  Enter Barcode Manually
+                </Label>
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <FormField
+                    control={form.control}
+                    name="barcode"
+                    render={({ field }) => (
+                      <FormItem className="flex-1 space-y-0">
+                        <FormControl>
+                          <div className="relative">
+                            <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              {...field}
+                              id="manual-barcode"
+                              type="text"
+                              placeholder="e.g., 3017620422003"
+                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
+                              disabled={isLoading || uploadingImage}
+                              className="pl-9 w-full"
+                              maxLength={13}
+                              aria-label="Enter barcode manually"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-xs mt-1" />
+                      </FormItem>
+                    )}
                   />
+                  <Button
+                    type="submit"
+                    disabled={isLoading || uploadingImage || !form.watch("barcode")?.trim()}
+                    className="gradient-primary shadow-soft whitespace-nowrap min-w-[100px]"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Scanning...
+                      </>
+                    ) : (
+                      "Scan"
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  type="submit"
-                  disabled={isLoading || uploadingImage || !manualBarcode.trim()}
-                  className="gradient-primary shadow-soft whitespace-nowrap min-w-[100px]"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Scanning...
-                    </>
-                  ) : (
-                    "Scan"
-                  )}
-                </Button>
               </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Enter 8-13 digit barcode (UPC, EAN, or ISBN)
-            </p>
-          </form>
+              <p className="text-xs text-muted-foreground">
+                Enter 8-13 digit barcode (UPC, EAN, or ISBN)
+              </p>
+            </form>
+          </Form>
         </CardContent>
       </Card>
 

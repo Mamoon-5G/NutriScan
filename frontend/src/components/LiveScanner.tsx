@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { X, Camera } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { Html5Qrcode } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -34,7 +35,7 @@ const LiveScanner = ({ onDetected, onClose }: Props) => {
         { fps: 10,  },
         onScanSuccess,
         () => {}
-      ).catch(console.error);
+      ).catch(e => logger.error("Camera access error:", e));
     });
 
     return () => {

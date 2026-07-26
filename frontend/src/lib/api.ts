@@ -1,5 +1,6 @@
 // API utility functions for NutriScan
 import axios from "axios";
+import { logger } from "@/lib/logger";
 
 // Base API URL - loaded from .env file via Vite and normalized (no trailing slash)
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
@@ -14,7 +15,7 @@ export const uploadImage = async (file: File) => {
   formData.append("image", file);
 
   const url = `${API_BASE_URL}/api/upload`;
-  console.debug("[api] POST", url);
+  logger.debug("[api] POST", url);
   const { data } = await axios.post(url, formData);
   return data;
 };
@@ -26,7 +27,7 @@ export const uploadImage = async (file: File) => {
  */
 export const getProductDetails = async (barcode: string) => {
   const url = `${API_BASE_URL}/api/product/${barcode}`;
-  console.debug("[api] GET", url);
+  logger.debug("[api] GET", url);
   const { data } = await axios.get(url);
   return data;
 };
@@ -38,7 +39,19 @@ export const getProductDetails = async (barcode: string) => {
  */
 export const analyzeProduct = async (product: unknown) => {
   const url = `${API_BASE_URL}/api/product/analyze`;
-  console.debug("[api] POST", url, product);
+  logger.debug("[api] POST", url, product);
+  const { data } = await axios.post(url, { product });
+  return data;
+};
+
+/**
+ * Get LLM recommendations for healthier alternatives
+ * @param product - Product object structured for recommendation
+ * @returns Promise with recommendation data
+ */
+export const getRecommendations = async (product: unknown) => {
+  const url = `${API_BASE_URL}/api/analyze-food/recommendations`;
+  logger.debug("[api] POST", url);
   const { data } = await axios.post(url, { product });
   return data;
 };
